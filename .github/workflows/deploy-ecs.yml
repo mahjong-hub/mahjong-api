@@ -21,7 +21,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
@@ -34,6 +35,7 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build and push multi-arch image
+        id: build-image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
@@ -44,6 +46,7 @@ jobs:
             -t $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG \
             -t $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:latest \
             --push .
+          echo "image=$ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
       - name: Render ECS task definition
         id: render-task
@@ -51,7 +54,7 @@ jobs:
         with:
           task-definition: ${{ env.ECS_TASK_DEFINITION }}
           container-name: ${{ env.CONTAINER_NAME }}
-          image: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+          image: ${{ steps.build-image.outputs.image }}
 
       - name: Register new task definition revision
         id: register-task
@@ -63,12 +66,11 @@ jobs:
           echo "arn=$ARN" >> $GITHUB_OUTPUT
           echo "Registered: $ARN"
 
-      - name: Run Django migrations (one-off)
+      - name: Run Django migrations
         env:
           MIGRATE_SUBNETS: ${{ secrets.ECS_MIGRATE_SUBNETS }}
           MIGRATE_SGS: ${{ secrets.ECS_MIGRATE_SECURITY_GROUPS }}
         run: |
-          # Convert CSV secrets to ECS list syntax
           SUBNETS_JSON=$(printf '"%s",' ${MIGRATE_SUBNETS//,/ } | sed 's/,$//')
           SGS_JSON=$(printf '"%s",' ${MIGRATE_SGS//,/ } | sed 's/,$//')
 
@@ -87,10 +89,48 @@ jobs:
               ]
             }'
 
-      - name: Deploy to ECS service
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
-        with:
-          task-definition: ${{ steps.render-task.outputs.task-definition }}
-          cluster: ${{ env.ECS_CLUSTER }}
-          service: ${{ env.ECS_SERVICE }}
-          wait-for-service-stability: true
+      - name: Deploy to ECS service (use registered ARN)
+        run: |
+          aws ecs update-service \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --service ${{ env.ECS_SERVICE }} \
+            --task-definition ${{ steps.register-task.outputs.arn }} \
+            --force-new-deployment
+
+      - name: Wait for ECS service stability
+        run: |
+          aws ecs wait services-stable \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --services ${{ env.ECS_SERVICE }}
+
+      - name: Verify ECS rollout succeeded
+        run: |
+          STATE=$(aws ecs describe-services \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --services ${{ env.ECS_SERVICE }} \
+            --query "services[0].deployments[0].rolloutState" \
+            --output text)
+
+          echo "Rollout state: $STATE"
+
+          if [ "$STATE" != "COMPLETED" ]; then
+            echo "ECS rollout did not complete successfully."
+            exit 1
+          fi
+
+      - name: Verify desired tasks are running
+        run: |
+          read DESIRED RUNNING <<EOF
+          $(aws ecs describe-services \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --services ${{ env.ECS_SERVICE }} \
+            --query "services[0].[desiredCount,runningCount]" \
+            --output text)
+          EOF
+
+          echo "Desired: $DESIRED, Running: $RUNNING"
+
+          if [ "$RUNNING" -lt "$DESIRED" ]; then
+            echo "Not all desired tasks are running."
+            exit 1
+          fi
