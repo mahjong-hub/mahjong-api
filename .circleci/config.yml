@@ -1,0 +1,31 @@
+version: 2.1
+
+aliases:
+- &python
+  docker:
+    - image: cimg/python:3.12
+- &install-pipenv-dependencies
+  run:
+    name: Install pipenv and dependencies
+    command: |
+      python -m pip install --upgrade pip pipenv setuptools
+      pipenv install --dev --deploy
+
+jobs:
+  test:
+    <<: *python
+    steps:
+      - checkout
+      - *install-pipenv-dependencies
+      - run:
+          name: Run tests
+          command: pipenv run python manage.py test
+
+  lint:
+    <<: *python
+    steps:
+      - checkout
+      - *install-pipenv-dependencies
+      - run:
+          name: Run linting
+          command: pipenv run flake8 .

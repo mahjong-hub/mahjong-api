@@ -1,0 +1,96 @@
+name: Deploy Django to ECS
+
+on:
+  push:
+    branches: ["main"]
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ap-southeast-2
+  ECR_REPOSITORY: mahjong-api
+  ECS_CLUSTER: mahjong-cluster
+  ECS_SERVICE: mahjong-api-task-service-yzr4x1bz
+  ECS_TASK_DEFINITION: .aws/ecs-task-def.json
+  CONTAINER_NAME: web
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/mahjong-github-deploy-role
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push multi-arch image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker buildx create --use
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            -t $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG \
+            -t $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:latest \
+            --push .
+
+      - name: Render ECS task definition
+        id: render-task
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: ${{ env.ECS_TASK_DEFINITION }}
+          container-name: ${{ env.CONTAINER_NAME }}
+          image: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+
+      - name: Register new task definition revision
+        id: register-task
+        run: |
+          ARN=$(aws ecs register-task-definition \
+            --cli-input-json file://${{ steps.render-task.outputs.task-definition }} \
+            --query 'taskDefinition.taskDefinitionArn' \
+            --output text)
+          echo "arn=$ARN" >> $GITHUB_OUTPUT
+          echo "Registered: $ARN"
+
+      - name: Run Django migrations (one-off)
+        env:
+          MIGRATE_SUBNETS: ${{ secrets.ECS_MIGRATE_SUBNETS }}
+          MIGRATE_SGS: ${{ secrets.ECS_MIGRATE_SECURITY_GROUPS }}
+        run: |
+          # Convert CSV secrets to ECS list syntax
+          SUBNETS_JSON=$(printf '"%s",' ${MIGRATE_SUBNETS//,/ } | sed 's/,$//')
+          SGS_JSON=$(printf '"%s",' ${MIGRATE_SGS//,/ } | sed 's/,$//')
+
+          aws ecs run-task \
+            --region ${{ env.AWS_REGION }} \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --launch-type FARGATE \
+            --task-definition ${{ steps.register-task.outputs.arn }} \
+            --network-configuration "awsvpcConfiguration={subnets=[$SUBNETS_JSON],securityGroups=[$SGS_JSON],assignPublicIp=ENABLED}" \
+            --overrides '{
+              "containerOverrides": [
+                {
+                  "name": "web",
+                  "command": ["python", "manage.py", "migrate", "--noinput"]
+                }
+              ]
+            }'
+
+      - name: Deploy to ECS service
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.render-task.outputs.task-definition }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          service: ${{ env.ECS_SERVICE }}
+          wait-for-service-stability: true

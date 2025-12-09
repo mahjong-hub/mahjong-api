@@ -16,8 +16,19 @@ Including another URLconf
 """
 
 from django.contrib import admin
-from django.urls import path
+from django.urls import include, path
+from rest_framework import routers
+from django.http import JsonResponse
+
+router = routers.DefaultRouter()
+
+
+def healthz(_):
+    return JsonResponse({"ok": True})
 
 urlpatterns = [
+    path('', include(router.urls)),
     path("admin/", admin.site.urls),
+    path("healthz", healthz),
+    path('api-auth/', include('rest_framework.urls', namespace='rest_framework'))
 ]
