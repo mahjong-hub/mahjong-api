@@ -30,7 +30,7 @@ jobs:
               echo "Not a PR build; skipping PR check"
               exit 0
             fi
-            python .circleci/check_pr.py
+            python .circleci/scripts/check_pr.py
 
   check_migrations:
     executor: python-executor
