@@ -155,44 +155,10 @@ jobs:
       # Rollout verification
       # --------------------------
 
-      - name: Verify WEB + WORKER rollouts
-        run: |
-          set -e
-
-          wait_service () {
-            local svc="$1"
-            echo "---- Checking rollout for: $svc ----"
-
-            for i in $(seq 1 60); do
-              read DESIRED RUNNING STATE <<EOF
-              $(aws ecs describe-services \
-              --cluster "${{ env.ECS_CLUSTER }}" \
-              --services "$svc" \
-              --query "services[0].[desiredCount,runningCount,deployments[?status=='PRIMARY']|[0].rolloutState]" \
-              --output text)
-              EOF
-
-              echo "$svc => desired=$DESIRED running=$RUNNING state=$STATE"
-
-              if [ "$STATE" = "FAILED" ]; then
-                echo "Rollout FAILED for $svc"
-                return 1
-              fi
-
-              if [ "$STATE" = "COMPLETED" ] && [ "$RUNNING" -ge "$DESIRED" ]; then
-                echo "Rollout COMPLETED for $svc"
-                return 0
-              fi
-
-              sleep 10
-            done
-
-            echo "Rollout timeout for $svc"
-            return 1
-          }
-
-          wait_service "${{ env.ECS_WEB_SERVICE }}"
-          wait_service "${{ env.ECS_WORKER_SERVICE }}"
+      - name: Wait for ECS rollouts (web + worker)
+        run: .github/scripts/wait_ecs_rollout.sh "$ECS_WEB_SERVICE" "$ECS_WORKER_SERVICE"
+        env:
+          ECS_CLUSTER: ${{ env.ECS_CLUSTER }}
 
       # Optional: log final ARNs for visibility
       - name: Deployment summary

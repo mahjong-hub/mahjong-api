@@ -1,0 +1,43 @@
+[tool.ruff]
+target-version = 'py312'
+line-length = 79
+
+[tool.ruff.format]
+quote-style = 'single'
+
+[tool.ruff.lint]
+select = [
+    'E',    # pycodestyle errors
+    'F',    # Pyflakes
+    'W',    # pycodestyle warnings
+    'B',    # flake8-bugbear
+    'N804', # Check `cls` for first argument of class methods
+    'N805', # Check `self` for first argument of instance methods
+]
+
+# Fix manually instead of auto-fix
+unfixable = [
+    # B905: Checks for `zip` calls without an `explicit` strict parameter
+    #   reason: Auto-fix of adding `strict=False` can be too lenient, as we may
+    #   want to throw or log an error if the iterable lengths differ.
+    'B905',
+]
+
+[tool.ruff.lint.per-file-ignores]
+# E501: line too long
+# E722: bare exceptions
+# F401: skip checking unused import in all __init__.py and test files
+# F403: allow using `from ... import *` in all __init__.py and setting files
+# F405: allow using variables from star imports
+#   e.g. `from .default import *` and then `MIDDLEWARE += ...`
+# F841: unused variables
+'__init__.py' = ['F401', 'F403']
+'mahjong_api/settings/*.py' = ['F403', 'F405']
+'*/migrations/*' = ['E501']
+'*/tests/*' = ['E501', 'E722', 'F401', 'F841']
+
+[tool.ruff.lint.pycodestyle]
+# Set maximum line length before "E501: line too long" starts reporting.
+# It equals `floor(line-length=79 * 1.1)` to simulate the unsupported
+# flake8-bugbear's `B950` rule
+max-line-length = 86
