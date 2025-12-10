@@ -13,14 +13,16 @@ on:
       - unassigned
 
 jobs:
-  pr_health:
+  pr_check:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Run PR health check
+      - name: Run PR check
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
