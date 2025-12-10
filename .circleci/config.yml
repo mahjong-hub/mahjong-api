@@ -16,6 +16,17 @@ references:
         pipenv install --dev --deploy
 
 jobs:
+  check_migrations:
+    <<: *python-executor
+    steps:
+      - checkout
+      - *install-pipenv-dependencies
+      - run:
+          name: Check for missing migrations
+          command: |
+            export DJANGO_SETTINGS_MODULE=mahjong_api.test_settings
+            pipenv run python manage.py makemigrations --check --dry-run
+
   test:
     <<: *python-executor
     steps:
@@ -33,12 +44,15 @@ jobs:
       - checkout
       - *install-pipenv-dependencies
       - run:
-          name: Run linting
+          name: Run linting (ruff)
           command: pipenv run ruff check .
 
 workflows:
   version: 2
   test_and_lint:
     jobs:
-      - test
+      - check_migrations
+      - test:
+          requires:
+            - check_migrations
       - lint
