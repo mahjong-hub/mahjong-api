@@ -33,10 +33,10 @@ pipenv run python manage.py test <app>.tests.<TestClass>.<test_method>
 
 ### Django Apps
 - **core**: Base models (`TimeStampedModel` with created_at/updated_at) and custom DRF exception handling
-- **users**: `Client` model for anonymous app installs (identified by install_id)
-- **assets**: Presigned S3 upload flow with upload sessions and polymorphic asset references (`AssetRef` uses GenericForeignKey)
-- **hands**: Mahjong hand detection - Celery tasks for running ML inference
-- **rules**: Mahjong rule sets (placeholder)
+- **user**: `Client` model for anonymous app installs (identified by install_id)
+- **asset**: Presigned S3 upload flow with upload sessions and polymorphic asset references (`AssetRef` uses GenericForeignKey)
+- **hand**: Mahjong hand detection - Celery tasks for running ML inference
+- **rule**: Mahjong rule sets (placeholder)
 
 ### Key Patterns
 

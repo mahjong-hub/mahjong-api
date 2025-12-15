@@ -23,10 +23,10 @@ INSTALLED_APPS = [
     'django_celery_results',
     'rest_framework',
     'core',
-    'rules',
-    'hands',
-    'assets',
-    'users',
+    'rule',
+    'hand',
+    'asset',
+    'user',
 ]
 
 MIDDLEWARE = [
@@ -41,6 +41,7 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'mahjong_api.urls'
+APPEND_SLASH = False
 
 TEMPLATES = [
     {
