@@ -82,7 +82,7 @@ jobs:
 workflows:
   version: 2
 
-  pr_checks_and_ci:
+  pr_ci:
     jobs:
       - check_migrations
       - test:
