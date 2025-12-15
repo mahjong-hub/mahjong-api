@@ -28,3 +28,10 @@ class InvalidUploadSessionStateError(BaseAPIException):
     code: str = 'invalid_upload_session_state'
     message: str = 'Upload session is in an invalid state for this operation.'
     status_code: int = 400
+
+
+@attr.s(auto_attribs=True, auto_exc=True)
+class ModelDownloadError(BaseAPIException):
+    code: str = 'model_download_error'
+    message: str = 'Failed to download model from S3.'
+    status_code: int = 500
