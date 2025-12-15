@@ -1,10 +1,11 @@
+import os
 from dataclasses import dataclass
 
 import boto3
 from botocore.exceptions import ClientError
 
 from asset.constants import DEFAULT_PRESIGNED_URL_EXPIRY
-from asset.exceptions import S3Error
+from asset.exceptions import ModelDownloadError, S3Error
 from core.exceptions import catch_and_reraise
 
 
@@ -63,3 +64,21 @@ def generate_presigned_put_url(
             },
             ExpiresIn=expiration,
         )
+
+
+def download_file(
+    bucket_name: str,
+    object_key: str,
+    local_path: str,
+) -> int:
+    s3_client = get_s3_client()
+    try:
+        s3_client.download_file(bucket_name, object_key, local_path)
+    except ClientError as e:
+        error_code = e.response.get('Error', {}).get('Code', 'Unknown')
+        error_msg = e.response.get('Error', {}).get('Message', str(e))
+        raise ModelDownloadError(
+            message=f'Failed to download from S3: [{error_code}] {error_msg}',
+        ) from e
+
+    return os.path.getsize(local_path)
