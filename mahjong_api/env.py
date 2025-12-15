@@ -87,3 +87,9 @@ AWS_STORAGE_BUCKET_NAME = get_required_env(
     'AWS_STORAGE_BUCKET_NAME',
     'AWS s3 storage bucket name',
 )
+
+# Model S3 download settings (for Celery worker)
+MODEL_S3_URI = get_optional_env(
+    'MODEL_S3_URI',
+    None,
+)
