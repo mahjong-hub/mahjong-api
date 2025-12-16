@@ -43,7 +43,7 @@ class TestAssetModel(TestCase):
         )
 
         self.assertEqual(asset.upload_session, self.upload_session)
-        self.assertIn(asset, self.upload_session.asset.all())
+        self.assertIn(asset, self.upload_session.assets.all())
 
     def test_create_asset_with_exif_data(self):
         exif_time = timezone.now() - timedelta(days=1)
