@@ -4,6 +4,10 @@ on:
   push:
     branches: ["main"]
 
+concurrency:
+  group: deploy-production
+  cancel-in-progress: true
+
 permissions:
   id-token: write
   contents: read
@@ -13,10 +17,9 @@ env:
   ECR_REPOSITORY: mahjong-api
   ECS_CLUSTER: mahjong-cluster
 
-  # Choose based on ECS runtimePlatform
-  # - X86_64  => linux/amd64
-  # - ARM64   => linux/arm64
-  # If you truly run both, set linux/amd64,linux/arm64 (slower)
+  # Choose based on ECS runtimePlatform:
+  # X86_64 => linux/amd64
+  # ARM64  => linux/arm64
   BUILD_PLATFORMS: linux/amd64
 
   # Web
@@ -40,6 +43,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Prevent "No space left on device" from Docker layers + caches
+      - name: Free disk space
+        run: |
+          df -h
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android || true
+          sudo docker system prune -af || true
+          df -h
+
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v5
         with:
@@ -50,8 +61,9 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      # Needed for multi-arch; harmless for single-arch
+      # Only needed if you build arm64 or multi-arch
       - name: Set up QEMU
+        if: contains(env.BUILD_PLATFORMS, 'arm64')
         uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
@@ -59,18 +71,21 @@ jobs:
 
       - name: Build and push image (cached)
         id: build-image
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          IMAGE_TAG: ${{ github.sha }}
-        run: |
-          docker buildx build \
-            --platform "${{ env.BUILD_PLATFORMS }}" \
-            -t "$ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG" \
-            -t "$ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:latest" \
-            --cache-from type=gha \
-            --cache-to type=gha,mode=max \
-            --push .
-          echo "image=$ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG" >> $GITHUB_OUTPUT
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          platforms: ${{ env.BUILD_PLATFORMS }}
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+            ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
+          labels: |
+            org.opencontainers.image.revision=${{ github.sha }}
+          # GHA cache: scope it + keep it smaller
+          cache-from: type=gha,scope=mahjong-api
+          cache-to: type=gha,scope=mahjong-api,mode=min
+          # Optional: reduces build overhead/noise in many setups
+          provenance: false
 
       - name: Render WEB task definition
         id: render-web
@@ -78,7 +93,7 @@ jobs:
         with:
           task-definition: ${{ env.ECS_WEB_TASK_DEFINITION }}
           container-name: ${{ env.WEB_CONTAINER_NAME }}
-          image: ${{ steps.build-image.outputs.image }}
+          image: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
 
       - name: Render WORKER task definition
         id: render-worker
@@ -86,7 +101,7 @@ jobs:
         with:
           task-definition: ${{ env.ECS_WORKER_TASK_DEFINITION }}
           container-name: ${{ env.WORKER_CONTAINER_NAME }}
-          image: ${{ steps.build-image.outputs.image }}
+          image: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
 
       - name: Register WEB task definition revision
         id: register-web
