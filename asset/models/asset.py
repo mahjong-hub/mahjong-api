@@ -1,7 +1,5 @@
 import uuid
-
 from django.db import models
-
 from core.models import TimeStampedModel
 
 
@@ -9,16 +7,16 @@ class Asset(TimeStampedModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     upload_session = models.ForeignKey(
-        'asset.UploadSession',
+        'UploadSession',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='asset',
+        related_name='assets',
     )
 
     is_active = models.BooleanField(default=True)
 
-    storage_provider = models.CharField(max_length=32)
+    storage_provider = models.CharField(max_length=32)  # ideally choices=
     storage_key = models.CharField(max_length=512)
 
     mime_type = models.CharField(max_length=127)
