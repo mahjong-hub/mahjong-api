@@ -4,8 +4,9 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from botocore.exceptions import ClientError
-from django.test import TestCase
+from django.test import TestCase, override_settings
 
+from asset.services.s3 import download_file
 from asset.exceptions import ModelDownloadError
 from ml.inference.model_loader import (
     ensure_model_local,
@@ -62,54 +63,42 @@ class TestParseS3Uri(TestCase):
 
 
 class TestGetModelLocalPath(TestCase):
-    def test_derives_path_from_env_vars(self):
-        from ml.inference import model_loader
-
-        with patch.object(model_loader.env, 'MODEL_DIR', '/models'):
-            with patch.object(
-                model_loader.env,
-                'TILE_DETECTOR_MODEL_NAME',
-                'tile',
-            ):
-                with patch.object(
-                    model_loader.env,
-                    'TILE_DETECTOR_MODEL_VERSION',
-                    'v1',
-                ):
-                    result = get_model_local_path()
+    @override_settings(
+        MODEL_DIR='/models',
+        TILE_DETECTOR_MODEL_NAME='tile',
+        TILE_DETECTOR_MODEL_VERSION='v1',
+    )
+    def test_derives_path_from_settings(self):
+        result = get_model_local_path()
         self.assertEqual(result, '/models/tile/v1/model.pt')
 
 
 class TestEnsureModelLocal(TestCase):
     @patch('ml.inference.model_loader.get_model_local_path')
-    def test_skips_download_when_file_exists(self, mock_get_path):
+    @patch('ml.inference.model_loader.download_file')
+    @override_settings(MODEL_S3_URI='s3://b/k')
+    def test_skips_download_when_file_exists(
+        self,
+        mock_download,
+        mock_get_path,
+    ):
         with tempfile.NamedTemporaryFile(delete=False) as f:
             f.write(b'fake model content')
             temp_path = f.name
 
         try:
             mock_get_path.return_value = temp_path
+            result = ensure_model_local()
 
-            with patch(
-                'ml.inference.model_loader.download_file',
-            ) as mock_download:
-                from ml.inference import model_loader
-
-                with patch.object(
-                    model_loader.env,
-                    'MODEL_S3_URI',
-                    's3://b/k',
-                ):
-                    result = ensure_model_local()
-
-                self.assertEqual(result, temp_path)
-                mock_download.assert_not_called()
+            self.assertEqual(result, temp_path)
+            mock_download.assert_not_called()
         finally:
             os.unlink(temp_path)
 
-    @patch('ml.inference.model_loader.download_file')
     @patch('ml.inference.model_loader.get_model_local_path')
-    def test_downloads_when_file_missing(self, mock_get_path, mock_download):
+    @patch('ml.inference.model_loader.download_file')
+    @override_settings(MODEL_S3_URI='s3://bucket/path/model.pt')
+    def test_downloads_when_file_missing(self, mock_download, mock_get_path):
         with tempfile.TemporaryDirectory() as tmpdir:
             local_path = os.path.join(tmpdir, 'subdir', 'model.pt')
             mock_get_path.return_value = local_path
@@ -120,15 +109,7 @@ class TestEnsureModelLocal(TestCase):
                 return 10
 
             mock_download.side_effect = fake_download
-
-            from ml.inference import model_loader
-
-            with patch.object(
-                model_loader.env,
-                'MODEL_S3_URI',
-                's3://bucket/path/model.pt',
-            ):
-                result = ensure_model_local()
+            result = ensure_model_local()
 
             self.assertEqual(result, local_path)
             mock_download.assert_called_once_with(
@@ -138,32 +119,29 @@ class TestEnsureModelLocal(TestCase):
             )
             self.assertTrue(Path(local_path).exists())
 
+    @override_settings(MODEL_S3_URI=None)
     def test_raises_when_s3_uri_missing(self):
-        from ml.inference import model_loader
+        with self.assertRaises(ModelDownloadError) as ctx:
+            ensure_model_local()
+        self.assertIn('MODEL_S3_URI', ctx.exception.message)
 
-        with patch.object(model_loader.env, 'MODEL_S3_URI', None):
-            with self.assertRaises(ModelDownloadError) as ctx:
-                ensure_model_local()
-            self.assertIn('MODEL_S3_URI', ctx.exception.message)
-
-    @patch('ml.inference.model_loader.download_file')
     @patch('ml.inference.model_loader.get_model_local_path')
-    def test_raises_on_download_failure(self, mock_get_path, mock_download):
+    @patch('ml.inference.model_loader.download_file')
+    @override_settings(MODEL_S3_URI='s3://b/k')
+    def test_raises_on_download_failure(self, mock_download, mock_get_path):
         mock_download.side_effect = ModelDownloadError(message='Access Denied')
 
         with tempfile.TemporaryDirectory() as tmpdir:
             local_path = os.path.join(tmpdir, 'model.pt')
             mock_get_path.return_value = local_path
 
-            from ml.inference import model_loader
+            with self.assertRaises(ModelDownloadError):
+                ensure_model_local()
 
-            with patch.object(model_loader.env, 'MODEL_S3_URI', 's3://b/k'):
-                with self.assertRaises(ModelDownloadError):
-                    ensure_model_local()
-
-    @patch('ml.inference.model_loader.download_file')
     @patch('ml.inference.model_loader.get_model_local_path')
-    def test_raises_on_empty_download(self, mock_get_path, mock_download):
+    @patch('ml.inference.model_loader.download_file')
+    @override_settings(MODEL_S3_URI='s3://b/k')
+    def test_raises_on_empty_download(self, mock_download, mock_get_path):
         with tempfile.TemporaryDirectory() as tmpdir:
             local_path = os.path.join(tmpdir, 'model.pt')
             mock_get_path.return_value = local_path
@@ -174,12 +152,9 @@ class TestEnsureModelLocal(TestCase):
 
             mock_download.side_effect = fake_download
 
-            from ml.inference import model_loader
-
-            with patch.object(model_loader.env, 'MODEL_S3_URI', 's3://b/k'):
-                with self.assertRaises(ModelDownloadError) as ctx:
-                    ensure_model_local()
-                self.assertIn('empty', ctx.exception.message)
+            with self.assertRaises(ModelDownloadError) as ctx:
+                ensure_model_local()
+            self.assertIn('empty', ctx.exception.message)
 
 
 class TestDownloadFileS3(TestCase):
@@ -197,8 +172,6 @@ class TestDownloadFileS3(TestCase):
                 Path(path).write_bytes(b'model content here')
 
             mock_client.download_file.side_effect = fake_download
-
-            from asset.services.s3 import download_file
 
             size = download_file('bucket', 'key/model.pt', local_path)
 
@@ -218,8 +191,6 @@ class TestDownloadFileS3(TestCase):
         )
         mock_get_client.return_value = mock_client
 
-        from asset.services.s3 import download_file
-
         with self.assertRaises(ModelDownloadError) as ctx:
             download_file('bucket', 'key', '/tmp/model.pt')
         self.assertIn('AccessDenied', ctx.exception.message)
@@ -232,8 +203,6 @@ class TestDownloadFileS3(TestCase):
             'GetObject',
         )
         mock_get_client.return_value = mock_client
-
-        from asset.services.s3 import download_file
 
         with self.assertRaises(ModelDownloadError) as ctx:
             download_file('bucket', 'key', '/tmp/model.pt')
