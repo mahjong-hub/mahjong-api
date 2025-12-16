@@ -13,6 +13,12 @@ env:
   ECR_REPOSITORY: mahjong-api
   ECS_CLUSTER: mahjong-cluster
 
+  # Choose based on ECS runtimePlatform
+  # - X86_64  => linux/amd64
+  # - ARM64   => linux/arm64
+  # If you truly run both, set linux/amd64,linux/arm64 (slower)
+  BUILD_PLATFORMS: linux/amd64
+
   # Web
   ECS_WEB_SERVICE: mahjong-api-task-service-yzr4x1bz
   ECS_WEB_TASK_DEFINITION: .aws/ecs-task-def.json
@@ -27,12 +33,12 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     environment:
-        name: production
-        url: https://api.mahjongcalc.com
+      name: production
+      url: https://api.mahjongcalc.com
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v5
@@ -44,23 +50,27 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build and push multi-arch image
+      # Needed for multi-arch; harmless for single-arch
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push image (cached)
         id: build-image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          docker buildx create --use
           docker buildx build \
-            --platform linux/amd64,linux/arm64 \
-            -t $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG \
-            -t $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:latest \
+            --platform "${{ env.BUILD_PLATFORMS }}" \
+            -t "$ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG" \
+            -t "$ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:latest" \
+            --cache-from type=gha \
+            --cache-to type=gha,mode=max \
             --push .
           echo "image=$ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG" >> $GITHUB_OUTPUT
-
-      # --------------------------
-      # Render task definitions
-      # --------------------------
 
       - name: Render WEB task definition
         id: render-web
@@ -77,10 +87,6 @@ jobs:
           task-definition: ${{ env.ECS_WORKER_TASK_DEFINITION }}
           container-name: ${{ env.WORKER_CONTAINER_NAME }}
           image: ${{ steps.build-image.outputs.image }}
-
-      # --------------------------
-      # Register new revisions
-      # --------------------------
 
       - name: Register WEB task definition revision
         id: register-web
@@ -102,10 +108,6 @@ jobs:
           echo "arn=$ARN" >> $GITHUB_OUTPUT
           echo "Registered WORKER: $ARN"
 
-      # --------------------------
-      # Run migrations (one-off)
-      # --------------------------
-
       - name: Run Django migrations
         env:
           MIGRATE_SUBNETS: ${{ secrets.ECS_MIGRATE_SUBNETS }}
@@ -122,16 +124,9 @@ jobs:
             --network-configuration "awsvpcConfiguration={subnets=[$SUBNETS_JSON],securityGroups=[$SGS_JSON],assignPublicIp=ENABLED}" \
             --overrides '{
               "containerOverrides": [
-                {
-                  "name": "web",
-                  "command": ["python", "manage.py", "migrate", "--noinput"]
-                }
+                { "name": "web", "command": ["python", "manage.py", "migrate", "--noinput"] }
               ]
             }'
-
-      # --------------------------
-      # Deploy both services
-      # --------------------------
 
       - name: Update WEB service to new revision
         run: |
@@ -151,16 +146,11 @@ jobs:
             --force-new-deployment \
             --no-paginate
 
-      # --------------------------
-      # Rollout verification
-      # --------------------------
-
       - name: Wait for ECS rollouts (web + worker)
         run: .github/scripts/wait_ecs_rollout.sh "$ECS_WEB_SERVICE" "$ECS_WORKER_SERVICE"
         env:
           ECS_CLUSTER: ${{ env.ECS_CLUSTER }}
 
-      # Optional: log final ARNs for visibility
       - name: Deployment summary
         run: |
           echo "WEB task:    ${{ steps.register-web.outputs.arn }}"
