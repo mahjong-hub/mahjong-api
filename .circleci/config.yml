@@ -63,6 +63,8 @@ jobs:
 
   test:
     executor: machine-executor
+    environment:
+      DJANGO_ENV: test
     steps:
       - checkout
       - install-python-machine
@@ -74,6 +76,8 @@ jobs:
 
   lint:
     executor: python-executor
+    environment:
+      DJANGO_ENV: test
     steps:
       - checkout
       - install-pipenv-dependencies

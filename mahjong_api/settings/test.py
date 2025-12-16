@@ -55,3 +55,16 @@ CELERY_TASK_DEFAULT_QUEUE = 'test-queue'
 PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.MD5PasswordHasher',
 ]
+
+
+# AWS S3 settings (test defaults)
+
+AWS_STORAGE_BUCKET_NAME = 'test-bucket'
+
+
+# ML Model settings (test defaults)
+
+MODEL_DIR = '/ml/models'
+MODEL_S3_URI = None
+TILE_DETECTOR_MODEL_NAME = 'tile_detector'
+TILE_DETECTOR_MODEL_VERSION = 'v0.1.0'
