@@ -1,6 +1,6 @@
 from celery import shared_task
+from django.conf import settings
 
-from mahjong_api import env
 from ml.inference.model import get_model
 
 
@@ -12,6 +12,6 @@ from ml.inference.model import get_model
 )
 def run_hand_detection(self, hand_id: str):
     model = get_model(
-        name=env.TILE_DETECTOR_MODEL_NAME,
-        version=env.TILE_DETECTOR_MODEL_VERSION,
+        name=settings.TILE_DETECTOR_MODEL_NAME,
+        version=settings.TILE_DETECTOR_MODEL_VERSION,
     )
