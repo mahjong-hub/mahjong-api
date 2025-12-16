@@ -1,11 +1,11 @@
-from dataclasses import dataclass
 import uuid
+from dataclasses import dataclass
 
+from django.conf import settings
 from django.db import transaction
 
 from hand.constants import HandSource
 from hand.models import Hand
-from mahjong_api import env
 from asset.constants import (
     ALLOWED_IMAGE_MIMES,
     AssetRole,
@@ -75,7 +75,7 @@ def create_presigned_upload(
         asset_id,
         content_type,
     )
-    bucket_name = env.AWS_STORAGE_BUCKET_NAME
+    bucket_name = settings.AWS_STORAGE_BUCKET_NAME
 
     presigned_url = generate_presigned_put_url(
         bucket_name=bucket_name,
@@ -127,7 +127,7 @@ def complete_upload(
     asset = Asset.objects.get(id=asset_id, upload_session=upload_session)
 
     metadata = head_object(
-        bucket_name=env.AWS_STORAGE_BUCKET_NAME,
+        bucket_name=settings.AWS_STORAGE_BUCKET_NAME,
         object_name=asset.storage_key,
     )
 
