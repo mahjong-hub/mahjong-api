@@ -17,9 +17,6 @@ env:
   ECR_REPOSITORY: mahjong-api
   ECS_CLUSTER: mahjong-cluster
 
-  # Choose based on ECS runtimePlatform:
-  # X86_64 => linux/amd64
-  # ARM64  => linux/arm64
   BUILD_PLATFORMS: linux/amd64
 
   # Web
@@ -81,10 +78,8 @@ jobs:
             ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
           labels: |
             org.opencontainers.image.revision=${{ github.sha }}
-          # GHA cache: scope it + keep it smaller
           cache-from: type=gha,scope=mahjong-api
           cache-to: type=gha,scope=mahjong-api,mode=min
-          # Optional: reduces build overhead/noise in many setups
           provenance: false
 
       - name: Render WEB task definition
@@ -123,11 +118,21 @@ jobs:
           echo "arn=$ARN" >> $GITHUB_OUTPUT
           echo "Registered WORKER: $ARN"
 
+      # Optional but recommended: ensure jq exists for later checks
+      - name: Ensure jq installed
+        run: |
+          if ! command -v jq >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y jq
+          fi
+
       - name: Run Django migrations
         env:
           MIGRATE_SUBNETS: ${{ secrets.ECS_MIGRATE_SUBNETS }}
           MIGRATE_SGS: ${{ secrets.ECS_MIGRATE_SECURITY_GROUPS }}
         run: |
+          set -euo pipefail
+
           SUBNETS_JSON=$(printf '"%s",' ${MIGRATE_SUBNETS//,/ } | sed 's/,$//')
           SGS_JSON=$(printf '"%s",' ${MIGRATE_SGS//,/ } | sed 's/,$//')
 
@@ -141,7 +146,38 @@ jobs:
               "containerOverrides": [
                 { "name": "web", "command": ["python", "manage.py", "migrate", "--noinput"] }
               ]
-            }'
+            }' >/tmp/migrate_run_task.json
+
+          echo "Run-task output saved to /tmp/migrate_run_task.json"
+          TASK_ARN=$(jq -r '.tasks[0].taskArn // empty' /tmp/migrate_run_task.json)
+          if [ -z "$TASK_ARN" ]; then
+            echo "❌ Could not determine migration taskArn"
+            cat /tmp/migrate_run_task.json
+            exit 1
+          fi
+
+          echo "Waiting for migration task to stop: $TASK_ARN"
+          aws ecs wait tasks-stopped --cluster ${{ env.ECS_CLUSTER }} --tasks "$TASK_ARN"
+
+          EXIT_CODE=$(aws ecs describe-tasks \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --tasks "$TASK_ARN" \
+            --query 'tasks[0].containers[0].exitCode' \
+            --output text)
+
+          STOP_REASON=$(aws ecs describe-tasks \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --tasks "$TASK_ARN" \
+            --query 'tasks[0].stoppedReason' \
+            --output text)
+
+          echo "Migration exitCode: $EXIT_CODE"
+          echo "Migration stoppedReason: $STOP_REASON"
+
+          if [ "$EXIT_CODE" != "0" ]; then
+            echo "❌ Migrations failed"
+            exit 1
+          fi
 
       - name: Update WEB service to new revision
         run: |
@@ -161,10 +197,79 @@ jobs:
             --force-new-deployment \
             --no-paginate
 
-      - name: Wait for ECS rollouts (web + worker)
-        run: .github/scripts/wait_ecs_rollout.sh "$ECS_WEB_SERVICE" "$ECS_WORKER_SERVICE"
-        env:
-          ECS_CLUSTER: ${{ env.ECS_CLUSTER }}
+      # Wait until services are stable (ECS definition of "steady state")
+      - name: Wait for ECS services to be stable (web + worker)
+        run: |
+          set -euo pipefail
+          aws ecs wait services-stable --cluster "${{ env.ECS_CLUSTER }}" --services "${{ env.ECS_WEB_SERVICE }}"
+          aws ecs wait services-stable --cluster "${{ env.ECS_CLUSTER }}" --services "${{ env.ECS_WORKER_SERVICE }}"
+
+      # HARD GATE: fail if rollback/circuit-breaker happened OR if services didn't end up on the intended task defs
+      - name: Verify deploy succeeded (no rollback) + task defs match
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          CLUSTER="${{ env.ECS_CLUSTER }}"
+
+          check_service () {
+            local SERVICE="$1"
+            local EXPECTED_TASKDEF="$2"
+
+            echo "---- Checking ECS service: $SERVICE ----"
+
+            aws ecs describe-services \
+              --cluster "$CLUSTER" \
+              --services "$SERVICE" \
+              --query 'services[0]' \
+              --output json > /tmp/svc.json
+
+            # Primary deployment
+            jq -r '.deployments[] | select(.status=="PRIMARY")' /tmp/svc.json > /tmp/primary.json || true
+            if [ ! -s /tmp/primary.json ]; then
+              echo "❌ No PRIMARY deployment found for $SERVICE"
+              cat /tmp/svc.json | jq .
+              exit 1
+            fi
+
+            PRIMARY_TASKDEF=$(jq -r '.taskDefinition' /tmp/primary.json)
+            ROLLOUT_STATE=$(jq -r '.rolloutState // empty' /tmp/primary.json)
+
+            echo "Primary taskDefinition: $PRIMARY_TASKDEF"
+            echo "Expected taskDefinition: $EXPECTED_TASKDEF"
+            echo "Rollout state: ${ROLLOUT_STATE:-"(not provided by ECS)"}"
+
+            # Check task def matches what we just registered
+            if [ "$PRIMARY_TASKDEF" != "$EXPECTED_TASKDEF" ]; then
+              echo "❌ Service $SERVICE is NOT running the expected task definition (likely rolled back)"
+              echo "Recent deployments:"
+              jq -r '.deployments[] | {status, rolloutState, taskDefinition, desiredCount, runningCount, pendingCount}' /tmp/svc.json | jq .
+              echo "Recent events:"
+              jq -r '.events[0:10][]?.message' /tmp/svc.json
+              exit 1
+            fi
+
+            # Fail if ECS reports failed rollout state
+            if [ "$ROLLOUT_STATE" = "FAILED" ]; then
+              echo "❌ Rollout FAILED for $SERVICE"
+              echo "Recent events:"
+              jq -r '.events[0:10][]?.message' /tmp/svc.json
+              exit 1
+            fi
+
+            # Catch rollback/circuit breaker signals in events
+            if jq -r '.events[0:20][]?.message' /tmp/svc.json | grep -Ei 'rollback|circuit breaker|deployment failed|failed deployment|stopped task' >/dev/null; then
+              echo "❌ Detected rollback/circuit-breaker style event for $SERVICE"
+              echo "Recent events:"
+              jq -r '.events[0:20][]?.message' /tmp/svc.json
+              exit 1
+            fi
+
+            echo "✅ $SERVICE looks healthy and on expected task def"
+          }
+
+          check_service "${{ env.ECS_WEB_SERVICE }}" "${{ steps.register-web.outputs.arn }}"
+          check_service "${{ env.ECS_WORKER_SERVICE }}" "${{ steps.register-worker.outputs.arn }}"
 
       - name: Deployment summary
         run: |
