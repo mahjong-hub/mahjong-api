@@ -20,8 +20,8 @@ commands:
     steps:
       - restore_cache:
           keys:
-            - v3-pip-{{ arch }}-{{ checksum "Pipfile.lock" }}
-            - v3-pip-{{ arch }}-
+            - v4-pip-{{ arch }}-{{ checksum "Pipfile.lock" }}
+            - v4-pip-{{ arch }}-
       - run:
           name: Install pipenv (for exporting locked requirements)
           command: |
@@ -30,9 +30,9 @@ commands:
           name: Export requirements from Pipfile.lock
           command: |
             if [ "<< parameters.dev >>" = "true" ]; then
-              pipenv requirements --dev > requirements.txt
+              python -m pipenv requirements --dev > requirements.txt
             else
-              pipenv requirements > requirements.txt
+              python -m pipenv requirements > requirements.txt
             fi
       - run:
           name: Install dependencies (pip, cached)
@@ -41,7 +41,7 @@ commands:
           command: |
             python -m pip install --cache-dir ~/.cache/pip -r requirements.txt
       - save_cache:
-          key: v3-pip-{{ arch }}-{{ checksum "Pipfile.lock" }}
+          key: v4-pip-{{ arch }}-{{ checksum "Pipfile.lock" }}
           paths:
             - ~/.cache/pip
 
@@ -61,7 +61,7 @@ commands:
 
             # Bootstrap pip for deadsnakes python
             python -m ensurepip --upgrade
-            python -m pip install --upgrade pip setuptools wheel pipenv
+            python -m pip install --upgrade pip setuptools wheel
 
 jobs:
   check_migrations:
@@ -113,7 +113,7 @@ workflows:
   pr_ci:
     jobs:
       - check_migrations
+      - lint
       - test:
           requires:
             - check_migrations
-      - lint
