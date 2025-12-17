@@ -5,44 +5,63 @@ executors:
     docker:
       - image: cimg/python:3.13
 
-  # Machine executor for tests requiring Docker (testcontainers)
   machine-executor:
     machine:
       image: ubuntu-2404:current
     resource_class: medium
 
 commands:
-  install-pipenv-dependencies:
-    description: Install pipenv and project dependencies
+  install-fast-deps:
+    description: Fast install deps from Pipfile.lock (pip wheel cache)
+    parameters:
+      dev:
+        type: boolean
+        default: true
     steps:
+      - restore_cache:
+          keys:
+            - v4-pip-{{ arch }}-{{ checksum "Pipfile.lock" }}
+            - v4-pip-{{ arch }}-
       - run:
-          name: Install pipenv and dependencies
-          environment:
-            PIPENV_YES: "1"
-            PIPENV_VENV_IN_PROJECT: "1"
+          name: Install pipenv (for exporting locked requirements)
           command: |
-            python -m pip install --upgrade pip pipenv setuptools
-            pipenv install --dev --deploy
+            python -m pip install --upgrade pip setuptools wheel pipenv
+      - run:
+          name: Export requirements from Pipfile.lock
+          command: |
+            if [ "<< parameters.dev >>" = "true" ]; then
+              python -m pipenv requirements --dev > requirements.txt
+            else
+              python -m pipenv requirements > requirements.txt
+            fi
+      - run:
+          name: Install dependencies (pip, cached)
+          environment:
+            PIP_CACHE_DIR: ~/.cache/pip
+          command: |
+            python -m pip install --cache-dir ~/.cache/pip -r requirements.txt
+      - save_cache:
+          key: v4-pip-{{ arch }}-{{ checksum "Pipfile.lock" }}
+          paths:
+            - ~/.cache/pip
 
   install-python-machine:
     description: Install Python 3.13 on machine executor
     steps:
       - run:
-          name: Install Python 3.13
+          name: Install Python 3.13 + pip
           command: |
             sudo add-apt-repository -y ppa:deadsnakes/ppa
             sudo apt-get update
-            sudo apt-get install -y python3.13 python3.13-venv python3.13-dev
+            sudo apt-get install -y \
+              python3.13 python3.13-venv python3.13-dev
+
             sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.13 1
             sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.13 1
-      - run:
-          name: Install pipenv and dependencies
-          environment:
-            PIPENV_YES: "1"
-            PIPENV_VENV_IN_PROJECT: "1"
-          command: |
-            python -m pip install --upgrade pip pipenv setuptools
-            python -m pipenv install --dev --deploy
+
+            # Bootstrap pip for deadsnakes python
+            python -m ensurepip --upgrade
+            python -m pip install --upgrade pip setuptools wheel
 
 jobs:
   check_migrations:
@@ -51,15 +70,16 @@ jobs:
       DJANGO_ENV: ci
     steps:
       - checkout
-      - install-pipenv-dependencies
+      - install-fast-deps:
+          dev: true
       - run:
           name: Check for missing migrations
           command: |
-            pipenv run python manage.py makemigrations --check --dry-run
+            python manage.py makemigrations --check --dry-run
       - run:
           name: Run fake migrations to ensure they can be applied
           command: |
-            pipenv run python manage.py migrate --fake --noinput
+            python manage.py migrate --fake --noinput
 
   test:
     executor: machine-executor
@@ -68,10 +88,12 @@ jobs:
     steps:
       - checkout
       - install-python-machine
+      - install-fast-deps:
+          dev: true
       - run:
           name: Run tests
           command: |
-            python -m pipenv run python manage.py test
+            python manage.py test
           no_output_timeout: 10m
 
   lint:
@@ -80,18 +102,18 @@ jobs:
       DJANGO_ENV: ci
     steps:
       - checkout
-      - install-pipenv-dependencies
+      - install-fast-deps:
+          dev: true
       - run:
           name: Run linting (ruff)
-          command: pipenv run ruff check .
+          command: ruff check .
 
 workflows:
   version: 2
-
   pr_ci:
     jobs:
       - check_migrations
+      - lint
       - test:
           requires:
             - check_migrations
-      - lint
