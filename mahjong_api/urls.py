@@ -36,5 +36,6 @@ urlpatterns = [
         include('rest_framework.urls', namespace='rest_framework'),
     ),
     path('asset/', include('asset.urls')),
+    path('hand/', include('hand.urls')),
     path('user/', include('user.urls')),
 ]
