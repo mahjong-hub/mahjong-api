@@ -1658,12 +1658,12 @@
         },
         "ultralytics": {
             "hashes": [
-                "sha256:2e33c46303d63e5deea14b19599aecd1562aeb1d3ddcdfff786cad66aa431083",
-                "sha256:f68b7ceed1d91ed970635656ef90bce4eee203311bce06b4222c51857ca223c1"
+                "sha256:b21179e8af29a5ca8c063e662b79b8a6ab7a84b788a200270d8723f4d611d3e1",
+                "sha256:dac0a0e1b999ace2e42845f600156b1c1a6987647a0de302290e6ede8492ff82"
             ],
             "index": "pypi",
             "markers": "python_version >= '3.8'",
-            "version": "==8.3.239"
+            "version": "==8.3.240"
         },
         "ultralytics-thop": {
             "hashes": [
