@@ -68,13 +68,13 @@ CELERY_VISIBILITY_TIMEOUT = get_optional_env(
 
 # Model settings
 MODEL_DIR = get_optional_env('MODEL_DIR', '/ml/models')
-TILE_DETECTOR_MODEL_NAME = get_required_env(
+TILE_DETECTOR_MODEL_NAME = get_optional_env(
     'TILE_DETECTOR_MODEL_NAME',
-    'Tile detector model name',
+    'tile_detector',
 )
-TILE_DETECTOR_MODEL_VERSION = get_required_env(
+TILE_DETECTOR_MODEL_VERSION = get_optional_env(
     'TILE_DETECTOR_MODEL_VERSION',
-    'Model version identifier e.g. v0.1.0',
+    'v0.1.0',
 )
 
 # AWS S3 credentials
