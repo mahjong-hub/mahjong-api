@@ -35,3 +35,38 @@ class UnknownTileLabelError(BaseAPIException):
     code: str = 'unknown_tile_label'
     message: str = 'Model predicted an unknown tile label.'
     status_code: int = 500
+
+
+@attr.s(auto_attribs=True, auto_exc=True)
+class HandNotFoundError(BaseAPIException):
+    code: str = 'hand_not_found'
+    message: str = 'Hand not found.'
+    status_code: int = 404
+
+
+@attr.s(auto_attribs=True, auto_exc=True)
+class HandOwnershipError(BaseAPIException):
+    code: str = 'hand_ownership_error'
+    message: str = 'Hand does not belong to this client.'
+    status_code: int = 403
+
+
+@attr.s(auto_attribs=True, auto_exc=True)
+class CorrectionNotFoundError(BaseAPIException):
+    code: str = 'correction_not_found'
+    message: str = 'Hand correction not found.'
+    status_code: int = 404
+
+
+@attr.s(auto_attribs=True, auto_exc=True)
+class InvalidTileDataError(BaseAPIException):
+    code: str = 'invalid_tile_data'
+    message: str = 'Invalid tile data provided.'
+    status_code: int = 400
+
+
+@attr.s(auto_attribs=True, auto_exc=True)
+class DetectionHandMismatchError(BaseAPIException):
+    code: str = 'detection_hand_mismatch'
+    message: str = 'Detection does not belong to this hand.'
+    status_code: int = 400

@@ -1,5 +1,5 @@
 import uuid
-from dataclasses import dataclass
+from typing import TypedDict
 
 from django.conf import settings
 from django.db import transaction
@@ -20,21 +20,9 @@ from asset.services.s3 import generate_presigned_put_url, head_object
 from user.models import Client
 
 
-@dataclass(frozen=True)
-class PresignResult:
-    upload_session_id: uuid.UUID
-    asset_id: uuid.UUID
+class PresignResult(TypedDict):
+    asset: Asset
     presigned_url: str
-    storage_key: str
-
-
-@dataclass(frozen=True)
-class CompleteResult:
-    upload_session_id: uuid.UUID
-    asset_id: uuid.UUID
-    is_active: bool
-    byte_size: int
-    checksum: str | None
 
 
 def validate_content_type(content_type: str) -> None:
@@ -75,8 +63,7 @@ def create_presigned_upload(
         purpose: Purpose of the upload (defaults to HAND_PHOTO).
 
     Returns:
-        PresignResult with upload_session_id, asset_id, presigned_url,
-        and storage_key.
+        PresignResult with asset and presigned_url.
 
     Raises:
         InvalidFileTypeError: If content_type is not allowed.
@@ -107,7 +94,7 @@ def create_presigned_upload(
             purpose=purpose,
         )
 
-        Asset.objects.create(
+        asset = Asset.objects.create(
             id=asset_id,
             upload_session=upload_session,
             storage_provider=StorageProvider.S3.value,
@@ -117,19 +104,17 @@ def create_presigned_upload(
             is_active=False,
         )
 
-    return PresignResult(
-        upload_session_id=upload_session.id,
-        asset_id=asset_id,
-        presigned_url=presigned_url,
-        storage_key=storage_key,
-    )
+    return {
+        'asset': asset,
+        'presigned_url': presigned_url,
+    }
 
 
 def complete_upload(
     *,
     asset_id: uuid.UUID,
     install_id: str,
-) -> CompleteResult:
+) -> Asset:
     """
     Complete an upload by validating the file exists in storage and updating
     asset metadata.
@@ -141,7 +126,7 @@ def complete_upload(
         install_id: The install_id for ownership validation.
 
     Returns:
-        CompleteResult with asset metadata.
+        Asset model with updated metadata.
 
     Raises:
         Asset.DoesNotExist: If asset not found or ownership mismatch.
@@ -183,10 +168,4 @@ def complete_upload(
         upload_session.status = UploadStatus.COMPLETED.value
         upload_session.save(update_fields=['status', 'updated_at'])
 
-    return CompleteResult(
-        upload_session_id=upload_session.id,
-        asset_id=asset.id,
-        is_active=asset.is_active,
-        byte_size=asset.byte_size,
-        checksum=asset.checksum,
-    )
+    return asset

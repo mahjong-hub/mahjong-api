@@ -59,6 +59,109 @@ from mahjong_api import env  # Only allowed in settings files
 
 **Celery Tasks**: Defined in `<app>/tasks.py`. Uses SQS as broker in production, memory broker in tests. Tasks run with `CELERY_TASK_ALWAYS_EAGER=True` during tests.
 
+### Service-Serializer-View Pattern
+
+Follow the pattern established in the `hand` app:
+
+**Services** (`<app>/services/<feature>.py`):
+- Contain business logic and database operations
+- Return Django model instances (not dataclasses)
+- Use `TypedDict` for compound returns (e.g., model + ephemeral data like presigned URLs)
+- Raise custom exceptions for validation errors
+
+```python
+# CORRECT - return model or TypedDict with model
+class PresignResult(TypedDict):
+    asset: Asset
+    presigned_url: str
+
+def create_presigned_upload(...) -> PresignResult:
+    ...
+    return {'asset': asset, 'presigned_url': presigned_url}
+
+# AVOID - returning dataclasses for API responses
+```
+
+**Serializers** (`<app>/serializers/<feature>_serializer.py`):
+- Use `ModelSerializer` for request/response handling
+- Implement validation in `validate_<field>()` methods
+- `create()` method calls service and returns model instance
+- Use `write_only=True` for request-only fields, `read_only=True` for response-only fields
+
+```python
+class HandDetectionSerializer(serializers.ModelSerializer):
+    asset_id = serializers.UUIDField(write_only=True)
+    tiles = DetectionTileSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = HandDetection
+        fields = [...]
+        read_only_fields = [...]
+
+    def validate_asset_id(self, value):
+        # Validation logic here
+        return value
+
+    def create(self, validated_data) -> HandDetection:
+        result = trigger_hand_detection(...)
+        return HandDetection.objects.get(id=result.hand_detection_id)
+```
+
+**Views** (`<app>/views/<feature>_view.py`):
+- Use `GenericViewSet` with appropriate mixins (`CreateModelMixin`, `RetrieveModelMixin`, etc.)
+- Set `serializer_class` and implement `get_queryset()` for ownership filtering
+- Use `get_serializer_context()` to pass request data (e.g., `install_id`)
+- Use `self.get_serializer()` instead of instantiating serializers directly
+
+```python
+class HandDetectionViewSet(
+    mixins.CreateModelMixin,
+    mixins.RetrieveModelMixin,
+    viewsets.GenericViewSet,
+):
+    serializer_class = HandDetectionSerializer
+
+    def get_queryset(self):
+        install_id = get_install_id(self.request)
+        return HandDetection.objects.filter(hand__client__install_id=install_id)
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['install_id'] = get_install_id(self.request)
+        return context
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        instance = serializer.save()
+        response_serializer = self.get_serializer(instance)
+        return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+```
+
+### File Naming Conventions
+
+```
+<app>/
+├── serializers/
+│   ├── __init__.py
+│   ├── <feature>_serializer.py      # e.g., hand_detection_serializer.py
+│   └── tests/
+│       └── test_<feature>_serializer.py
+├── services/
+│   ├── __init__.py
+│   ├── <feature>.py                 # e.g., hand_detection.py
+│   └── tests/
+│       └── test_<feature>.py
+├── views/
+│   ├── __init__.py
+│   ├── <feature>_view.py            # e.g., hand_detection_view.py
+│   └── tests/
+│       └── test_<feature>_view.py
+└── models/
+    ├── __init__.py
+    └── <model>.py                   # e.g., hand.py, hand_tile.py
+```
+
 **ML Model Loading**:
 - `ml/inference/model.py` - Singleton pattern for YOLO model, loaded once per process via `get_model()`
 - `ml/inference/model_loader.py` - Downloads model weights from S3 at Celery worker startup

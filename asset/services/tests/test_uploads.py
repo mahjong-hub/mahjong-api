@@ -11,7 +11,6 @@ from asset.exceptions import (
     UploadNotCompleteError,
 )
 from asset.factories import AssetFactory, ClientFactory, UploadSessionFactory
-from asset.models import Asset, UploadSession
 from asset.services.s3 import S3ObjectMetadata
 from asset.services.uploads import (
     complete_upload,
@@ -84,19 +83,16 @@ class TestCreatePresignedUpload(TestCase):
             purpose='hand_photo',
         )
 
-        self.assertIsNotNone(result.upload_session_id)
-        self.assertIsNotNone(result.asset_id)
+        self.assertIsNotNone(result['asset'])
         self.assertEqual(
-            result.presigned_url,
+            result['presigned_url'],
             'https://s3.example.com/presigned',
         )
 
-        session = UploadSession.objects.get(id=result.upload_session_id)
+        asset = result['asset']
+        session = asset.upload_session
         self.assertEqual(session.status, UploadStatus.PRESIGNED.value)
         self.assertEqual(session.client, client)
-
-        asset = Asset.objects.get(id=result.asset_id)
-        self.assertEqual(asset.upload_session, session)
         self.assertFalse(asset.is_active)
 
     @patch('asset.services.uploads.generate_presigned_put_url')
@@ -136,18 +132,13 @@ class TestCompleteUpload(TestCase):
             install_id=session.client.install_id,
         )
 
-        self.assertEqual(result.upload_session_id, session.id)
-        self.assertEqual(result.asset_id, asset.id)
+        self.assertEqual(result.id, asset.id)
         self.assertTrue(result.is_active)
         self.assertEqual(result.byte_size, 12345)
         self.assertEqual(result.checksum, '"abc123"')
 
         session.refresh_from_db()
         self.assertEqual(session.status, UploadStatus.COMPLETED.value)
-
-        asset.refresh_from_db()
-        self.assertTrue(asset.is_active)
-        self.assertEqual(asset.byte_size, 12345)
 
     @patch('asset.services.uploads.head_object')
     def test_wrong_session_state_raises_error(self, mock_head):
