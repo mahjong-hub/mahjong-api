@@ -1,6 +1,3 @@
-from user.serializers.client import (
-    ClientResponseSerializer,
-    IdentifyRequestSerializer,
-)
+from user.serializers.client_serializer import ClientSerializer
 
-__all__ = ['ClientResponseSerializer', 'IdentifyRequestSerializer']
+__all__ = ['ClientSerializer']

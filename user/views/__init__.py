@@ -1,3 +1,3 @@
-from user.views.client_view import ClientsViewSet
+from user.views.client_view import ClientViewSet
 
-__all__ = ['ClientsViewSet']
+__all__ = ['ClientViewSet']
