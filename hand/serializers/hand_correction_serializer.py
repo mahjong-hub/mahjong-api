@@ -33,6 +33,7 @@ class HandCorrectionSerializer(serializers.ModelSerializer):
         required=False,
         allow_null=True,
         default=None,
+        write_only=True,
     )
 
     class Meta:
