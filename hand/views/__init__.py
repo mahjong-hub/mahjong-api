@@ -1,3 +1,4 @@
-from hand.views.detection_view import DetectionViewSet
+from hand.views.hand_detection_view import HandDetectionViewSet
+from hand.views.hand_correction_view import HandCorrectionViewSet
 
-__all__ = ['DetectionViewSet']
+__all__ = ['HandDetectionViewSet', 'HandCorrectionViewSet']

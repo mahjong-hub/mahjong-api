@@ -16,22 +16,22 @@ from hand.models import Hand, HandDetection
     TILE_DETECTOR_MODEL_NAME='tile_detector',
     TILE_DETECTOR_MODEL_VERSION='v0.1.0',
 )
-class TestDetectionViewSetTrigger(APITestCase):
-    @patch('hand.services.detection.current_app.send_task')
+class TestHandDetectionViewSetTrigger(APITestCase):
+    @patch('hand.services.hand_detection.current_app.send_task')
     def test_success(self, mock_send_task):
         session = UploadSessionFactory(status=UploadStatus.COMPLETED.value)
         asset = AssetFactory(upload_session=session, is_active=True)
 
         response = self.client.post(
-            '/hand/detect/',
+            '/hand/detection/',
             {'asset_id': str(asset.id), 'source': 'camera'},
             HTTP_X_INSTALL_ID=session.client.install_id,
         )
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertIn('id', response.data)
         self.assertIn('hand_id', response.data)
         self.assertIn('asset_ref_id', response.data)
-        self.assertIn('hand_detection_id', response.data)
         self.assertEqual(
             response.data['status'],
             DetectionStatus.PENDING.value,
@@ -39,13 +39,13 @@ class TestDetectionViewSetTrigger(APITestCase):
 
         mock_send_task.assert_called_once()
 
-    @patch('hand.services.detection.current_app.send_task')
+    @patch('hand.services.hand_detection.current_app.send_task')
     def test_default_source(self, mock_send_task):
         session = UploadSessionFactory(status=UploadStatus.COMPLETED.value)
         asset = AssetFactory(upload_session=session, is_active=True)
 
         response = self.client.post(
-            '/hand/detect/',
+            '/hand/detection/',
             {'asset_id': str(asset.id)},
             HTTP_X_INSTALL_ID=session.client.install_id,
         )
@@ -54,7 +54,7 @@ class TestDetectionViewSetTrigger(APITestCase):
 
     def test_missing_install_id_header(self):
         response = self.client.post(
-            '/hand/detect/',
+            '/hand/detection/',
             {'asset_id': str(uuid.uuid4())},
         )
 
@@ -65,43 +65,42 @@ class TestDetectionViewSetTrigger(APITestCase):
         client = ClientFactory()
 
         response = self.client.post(
-            '/hand/detect/',
+            '/hand/detection/',
             {},
             HTTP_X_INSTALL_ID=client.install_id,
         )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    @patch('hand.services.detection.current_app.send_task')
+    @patch('hand.services.hand_detection.current_app.send_task')
     def test_asset_not_active(self, mock_send_task):
         session = UploadSessionFactory(status=UploadStatus.PRESIGNED.value)
         asset = AssetFactory(upload_session=session, is_active=False)
 
         response = self.client.post(
-            '/hand/detect/',
+            '/hand/detection/',
             {'asset_id': str(asset.id)},
             HTTP_X_INSTALL_ID=session.client.install_id,
         )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data['code'], 'asset_not_active')
 
         mock_send_task.assert_not_called()
 
-    @patch('hand.services.detection.current_app.send_task')
+    @patch('hand.services.hand_detection.current_app.send_task')
     def test_ownership_validation(self, mock_send_task):
         session = UploadSessionFactory(status=UploadStatus.COMPLETED.value)
         asset = AssetFactory(upload_session=session, is_active=True)
         other_client = ClientFactory()
 
         response = self.client.post(
-            '/hand/detect/',
+            '/hand/detection/',
             {'asset_id': str(asset.id)},
             HTTP_X_INSTALL_ID=other_client.install_id,
         )
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertEqual(response.data['code'], 'asset_ownership_error')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('asset_id', response.data)
 
         mock_send_task.assert_not_called()
 
@@ -126,15 +125,12 @@ class TestDetectionViewSetRetrieve(APITestCase):
         )
 
         response = self.client.get(
-            f'/hand/detect/{detection.id}/',
+            f'/hand/detection/{detection.id}/',
             HTTP_X_INSTALL_ID=client.install_id,
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(
-            response.data['hand_detection_id'],
-            str(detection.id),
-        )
+        self.assertEqual(response.data['id'], str(detection.id))
         self.assertEqual(
             response.data['status'],
             DetectionStatus.PENDING.value,
@@ -142,7 +138,7 @@ class TestDetectionViewSetRetrieve(APITestCase):
         self.assertEqual(response.data['tiles'], [])
 
     def test_missing_install_id_header(self):
-        response = self.client.get(f'/hand/detect/{uuid.uuid4()}/')
+        response = self.client.get(f'/hand/detection/{uuid.uuid4()}/')
 
         # NotAuthenticated returns 403 in DRF when no auth classes configured
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
@@ -151,14 +147,14 @@ class TestDetectionViewSetRetrieve(APITestCase):
         client = ClientFactory()
 
         response = self.client.get(
-            f'/hand/detect/{uuid.uuid4()}/',
+            f'/hand/detection/{uuid.uuid4()}/',
             HTTP_X_INSTALL_ID=client.install_id,
         )
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        self.assertEqual(response.data['code'], 'detection_not_found')
 
-    def test_ownership_validation(self):
+    def test_ownership_returns_not_found(self):
+        """Non-owned detections return 404 (queryset excludes them)."""
         client = ClientFactory()
         other_client = ClientFactory()
         hand = Hand.objects.create(client=client, source='camera')
@@ -176,9 +172,9 @@ class TestDetectionViewSetRetrieve(APITestCase):
         )
 
         response = self.client.get(
-            f'/hand/detect/{detection.id}/',
+            f'/hand/detection/{detection.id}/',
             HTTP_X_INSTALL_ID=other_client.install_id,
         )
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertEqual(response.data['code'], 'detection_ownership_error')
+        # Queryset filtering returns 404, not 403 (doesn't reveal existence)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
