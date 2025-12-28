@@ -1,12 +1,9 @@
-"""
-Mahjong Tile Constants
-
-Provides canonical tile codes and mappings from ML model labels.
-The detection task uses this mapping to convert model predictions
-to standardized tile codes stored in DetectionTile.
-"""
-
+from collections import Counter
 from enum import Enum
+
+# Standard tiles have 4 copies in a mahjong set
+MAX_STANDARD_TILE_COUNT = 4
+MAX_UNIQUE_TILE_COUNT = 1
 
 
 class TileCode(Enum):
@@ -136,6 +133,20 @@ MODEL_LABEL_TO_TILE: dict[str, TileCode] = {
     '4S': TileCode.SEASON_4,
 }
 
+# Tiles that are unique in a standard mahjong set (max 1 of each)
+UNIQUE_TILES: frozenset[str] = frozenset(
+    {
+        TileCode.FLOWER_1.value,
+        TileCode.FLOWER_2.value,
+        TileCode.FLOWER_3.value,
+        TileCode.FLOWER_4.value,
+        TileCode.SEASON_1.value,
+        TileCode.SEASON_2.value,
+        TileCode.SEASON_3.value,
+        TileCode.SEASON_4.value,
+    },
+)
+
 
 def label_to_tile(label: str) -> TileCode | None:
     """
@@ -161,3 +172,41 @@ def is_valid_tile_code(code: str) -> bool:
         True if the code is a valid TileCode value, False otherwise.
     """
     return code in {t.value for t in TileCode}
+
+
+def validate_tile_counts(tile_codes: list[str]) -> list[str]:
+    """
+    Validate that tile counts don't exceed mahjong set limits.
+
+    Rules:
+    - Flowers and Seasons: max 1 of each (unique in set)
+    - All other tiles: max 4 of each
+
+    Args:
+        tile_codes: List of tile code strings to validate.
+
+    Returns:
+        List of error messages. Empty list means validation passed.
+    """
+    errors = []
+    counts = Counter(tile_codes)
+
+    for tile_code, count in counts.items():
+        if not is_valid_tile_code(tile_code):
+            errors.append(f'Invalid tile code: {tile_code}')
+            continue
+
+        if tile_code in UNIQUE_TILES:
+            if count > MAX_UNIQUE_TILE_COUNT:
+                errors.append(
+                    f'Tile {tile_code} appears {count} times, '
+                    f'but max is {MAX_UNIQUE_TILE_COUNT} (unique tile)',
+                )
+        else:
+            if count > MAX_STANDARD_TILE_COUNT:
+                errors.append(
+                    f'Tile {tile_code} appears {count} times, '
+                    f'but max is {MAX_STANDARD_TILE_COUNT}',
+                )
+
+    return errors
