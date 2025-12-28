@@ -22,6 +22,16 @@ class Hand(TimeStampedModel):
         default=HandSource.CAMERA.value,
     )
 
+    # Points to the latest verified tile snapshot
+    # Updated whenever a new correction is created
+    active_hand_correction = models.ForeignKey(
+        'hand.HandCorrection',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='+',  # No reverse relation needed
+    )
+
     class Meta:
         indexes = [
             models.Index(fields=['client', 'created_at']),
