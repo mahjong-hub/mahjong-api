@@ -1,13 +1,20 @@
 from rest_framework import mixins, status, viewsets
 from rest_framework.response import Response
 
+from asset.models import Asset
 from asset.views import get_install_id
+from hand.constants import HandSource
 from hand.models import HandDetection
 from hand.serializers.hand_detection_serializer import HandDetectionSerializer
+from hand.services.hand_detection import (
+    create_detection,
+    enqueue_detection_task,
+    find_existing_detection,
+)
+from user.models import Client
 
 
 class HandDetectionViewSet(
-    mixins.CreateModelMixin,
     mixins.RetrieveModelMixin,
     viewsets.GenericViewSet,
 ):
@@ -37,9 +44,25 @@ class HandDetectionViewSet(
 
     def create(self, request, *args, **kwargs):
         """Trigger detection on an uploaded asset."""
+        install_id = get_install_id(request)
+
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        detection = serializer.save()
+
+        asset_id = serializer.validated_data['asset_id']
+        source = serializer.validated_data.get(
+            'source',
+            HandSource.CAMERA.value,
+        )
+        asset = Asset.objects.get(id=asset_id)
+
+        detection = find_existing_detection(asset)
+
+        if not detection:
+            # Create new detection and enqueue task
+            client = Client.objects.get(install_id=install_id)
+            detection = create_detection(asset, client, source)
+            enqueue_detection_task(detection)
 
         response_serializer = self.get_serializer(detection)
         return Response(
