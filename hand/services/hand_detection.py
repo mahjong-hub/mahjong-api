@@ -8,12 +8,6 @@ from django.db import transaction
 from asset.constants import AssetRole
 from asset.models import Asset, AssetRef
 from hand.constants import DetectionStatus, HandSource
-from hand.exceptions import (
-    AssetNotActiveError,
-    AssetOwnershipError,
-    DetectionNotFoundError,
-    DetectionOwnershipError,
-)
 from hand.models import Hand, HandDetection
 from user.models import Client
 
@@ -39,25 +33,10 @@ def trigger_hand_detection(
     Trigger a detection for the given asset.
 
     Creates Hand, AssetRef, and HandDetection, then enqueues the Celery task.
+
+    Note: Assumes asset ownership and is_active have been validated by caller.
     """
-    asset = Asset.objects.select_related('upload_session__client').get(
-        id=asset_id,
-    )
-
-    # Validate ownership
-    if (
-        not asset.upload_session
-        or asset.upload_session.client.install_id != install_id
-    ):
-        raise AssetOwnershipError(
-            message=f'Asset {asset_id} does not belong to client {install_id}',
-        )
-
-    # Validate asset is active
-    if not asset.is_active:
-        raise AssetNotActiveError(
-            message=f'Asset {asset_id} is not active. Complete upload first.',
-        )
+    asset = Asset.objects.get(id=asset_id)
 
     model_version = settings.TILE_DETECTOR_MODEL_VERSION
 
@@ -127,32 +106,3 @@ def trigger_hand_detection(
         hand_detection_id=detection.id,
         status=detection.status,
     )
-
-
-def get_hand_detection(
-    *,
-    hand_detection_id: uuid.UUID,
-    install_id: str,
-) -> HandDetection:
-    """
-    Get a detection by ID with ownership validation.
-    """
-    try:
-        detection = (
-            HandDetection.objects.select_related(
-                'hand__client',
-            )
-            .prefetch_related('tiles')
-            .get(id=hand_detection_id)
-        )
-    except HandDetection.DoesNotExist:
-        raise DetectionNotFoundError(
-            message=f'Detection {hand_detection_id} not found.',
-        ) from None
-
-    if detection.hand.client.install_id != install_id:
-        raise DetectionOwnershipError(
-            message='Detection does not belong to this client.',
-        )
-
-    return detection
