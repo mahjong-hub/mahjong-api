@@ -104,7 +104,7 @@ def run_hand_detection(self, hand_detection_id: str):
     try:
         # Lazy import to avoid loading ML dependencies at module import time
         # This ensures Django startup/migrations don't import ultralytics/cv2
-        from hand.services.inference import run_inference
+        from hand.services.hand_inference import run_inference
 
         threshold = settings.DETECTION_CONFIDENCE_THRESHOLD
         if threshold is None:
