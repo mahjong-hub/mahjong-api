@@ -18,7 +18,7 @@ ENV PYTHONUNBUFFERED=1
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libpq5 curl libcurl4 libgl1-mesa-glx libglib2.0-0 \
+    libpq5 curl libcurl4 libgl1 libglib2.0-0 \
   && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /install /usr/local
