@@ -4,25 +4,6 @@ from user.models import Client
 
 
 class ClientSerializer(serializers.ModelSerializer):
-    """
-    Serializer for client identity.
-
-    For create (identify): accepts install_id and optional label.
-    For read: returns all client fields.
-    """
-
-    install_id = serializers.CharField(
-        max_length=64,
-        help_text='Unique device/app install identifier',
-    )
-    label = serializers.CharField(
-        required=False,
-        max_length=120,
-        default='',
-        allow_blank=True,
-        help_text='Optional device label/name',
-    )
-
     class Meta:
         model = Client
         fields = ['install_id', 'label', 'created_at', 'last_seen_at']
