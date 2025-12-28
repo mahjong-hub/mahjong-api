@@ -67,7 +67,7 @@ class HandCorrectionSerializer(serializers.ModelSerializer):
         if hand.client.install_id != install_id:
             raise serializers.ValidationError(
                 'Hand does not belong to this client.',
-            ) from None
+            )
 
         self._hand = hand
         return value
