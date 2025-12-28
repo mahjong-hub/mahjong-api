@@ -4,6 +4,11 @@ from user.models import Client
 
 
 class ClientSerializer(serializers.ModelSerializer):
+    # Override to remove unique validator
+    install_id = serializers.CharField(max_length=64)
+    # Default to empty string so it appears in validated_data
+    label = serializers.CharField(max_length=128, default='', allow_blank=True)
+
     class Meta:
         model = Client
         fields = ['install_id', 'label', 'created_at', 'last_seen_at']
