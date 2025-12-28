@@ -3,7 +3,6 @@ from rest_framework import serializers
 from asset.models import Asset
 from hand.constants import HandSource
 from hand.models import DetectionTile, HandDetection
-from hand.services.hand_detection import trigger_hand_detection
 
 
 class DetectionTileSerializer(serializers.ModelSerializer):
@@ -95,23 +94,4 @@ class HandDetectionSerializer(serializers.ModelSerializer):
                 'Asset is not active. Complete upload first.',
             )
 
-        self._asset = asset
         return value
-
-    def create(self, validated_data) -> HandDetection:
-        """Create via service layer (handles Hand, AssetRef, Detection creation)."""
-        install_id = self.context.get('install_id')
-
-        result = trigger_hand_detection(
-            asset_id=validated_data['asset_id'],
-            install_id=install_id,
-            source=validated_data.get('source', HandSource.CAMERA.value),
-        )
-
-        return (
-            HandDetection.objects.select_related('asset_ref')
-            .prefetch_related('tiles')
-            .get(
-                id=result.hand_detection_id,
-            )
-        )
