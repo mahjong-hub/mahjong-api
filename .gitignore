@@ -210,3 +210,6 @@ __marimo__/
 .DS_Store
 *.pt
 ml/models/**
+
+# VSCode
+.vscode/
