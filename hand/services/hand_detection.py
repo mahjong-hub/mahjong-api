@@ -1,13 +1,10 @@
-import uuid
-from dataclasses import dataclass
-
 from celery import current_app
 from django.conf import settings
 from django.db import transaction
 
 from asset.constants import AssetRole
 from asset.models import Asset, AssetRef
-from hand.constants import DetectionStatus, HandSource
+from hand.constants import DetectionStatus
 from hand.models import Hand, HandDetection
 from user.models import Client
 
@@ -15,32 +12,14 @@ from user.models import Client
 HAND_DETECTION_TASK_NAME = 'hand.tasks.run_hand_detection'
 
 
-@dataclass(frozen=True)
-class TriggerDetectionResult:
-    hand_id: uuid.UUID
-    asset_ref_id: uuid.UUID
-    hand_detection_id: uuid.UUID
-    status: str
-
-
-def trigger_hand_detection(
-    *,
-    asset_id: uuid.UUID,
-    install_id: str,
-    source: str = HandSource.CAMERA.value,
-) -> TriggerDetectionResult:
+def find_existing_detection(asset: Asset) -> HandDetection | None:
     """
-    Trigger a detection for the given asset.
+    Find existing non-failed detection for the asset with current model version.
 
-    Creates Hand, AssetRef, and HandDetection, then enqueues the Celery task.
-
-    Note: Assumes asset ownership and is_active have been validated by caller.
+    Returns the detection if found and not failed, otherwise None.
     """
-    asset = Asset.objects.get(id=asset_id)
-
     model_version = settings.TILE_DETECTOR_MODEL_VERSION
 
-    # Check for existing detection (idempotency)
     existing_ref = (
         AssetRef.objects.filter(
             asset=asset,
@@ -50,37 +29,43 @@ def trigger_hand_detection(
         .first()
     )
 
-    if existing_ref:
-        hand_id = existing_ref.owner_id
+    if not existing_ref:
+        return None
 
-        # Check for existing detection with same model version
-        existing_detection = (
-            HandDetection.objects.filter(
-                hand_id=hand_id,
-                model_version=model_version,
-            )
-            .order_by('-created_at')
-            .first()
+    existing_detection = (
+        HandDetection.objects.filter(
+            hand_id=existing_ref.owner_id,
+            model_version=model_version,
+        )
+        .order_by('-created_at')
+        .first()
+    )
+
+    if (
+        existing_detection
+        and existing_detection.status != DetectionStatus.FAILED.value
+    ):
+        return (
+            HandDetection.objects.select_related('asset_ref')
+            .prefetch_related('tiles')
+            .get(id=existing_detection.id)
         )
 
-        if existing_detection:
-            # If not failed, return existing
-            if existing_detection.status != DetectionStatus.FAILED.value:
-                return TriggerDetectionResult(
-                    hand_id=hand_id,
-                    asset_ref_id=existing_ref.id,
-                    hand_detection_id=existing_detection.id,
-                    status=existing_detection.status,
-                )
+    return None
 
-    # Create new detection run
-    client = Client.objects.get(install_id=install_id)
 
+def create_detection(
+    asset: Asset,
+    client: Client,
+    source: str,
+) -> HandDetection:
+    """
+    Create Hand, AssetRef, and HandDetection for the asset.
+
+    All records are created atomically in a single transaction.
+    """
     with transaction.atomic():
-        hand = Hand.objects.create(
-            client=client,
-            source=source,
-        )
+        hand = Hand.objects.create(client=client, source=source)
 
         asset_ref = AssetRef.attach(
             asset=asset,
@@ -93,16 +78,20 @@ def trigger_hand_detection(
             asset_ref=asset_ref,
             status=DetectionStatus.PENDING.value,
             model_name=settings.TILE_DETECTOR_MODEL_NAME,
-            model_version=model_version,
+            model_version=settings.TILE_DETECTOR_MODEL_VERSION,
         )
 
-    # Enqueue Celery task via send_task to avoid importing the task module
-    # This breaks the import chain that would otherwise load ML dependencies
-    current_app.send_task(HAND_DETECTION_TASK_NAME, args=[str(detection.id)])
+    return (
+        HandDetection.objects.select_related('asset_ref')
+        .prefetch_related('tiles')
+        .get(id=detection.id)
+    )
 
-    return TriggerDetectionResult(
-        hand_id=hand.id,
-        asset_ref_id=asset_ref.id,
-        hand_detection_id=detection.id,
-        status=detection.status,
+
+def enqueue_detection_task(detection: HandDetection) -> None:
+    """Enqueue the Celery task to run detection inference."""
+    current_app.send_task(
+        HAND_DETECTION_TASK_NAME,
+        args=[str(detection.id)],
+        queue=settings.CELERY_TASK_DEFAULT_QUEUE,
     )
