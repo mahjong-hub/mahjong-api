@@ -145,7 +145,7 @@ class TestHandCorrectionSerializer(TestCase):
         serializer = HandCorrectionSerializer(instance=correction)
 
         self.assertEqual(
-            serializer.data['hand_correction_id'],
+            serializer.data['id'],
             str(correction.id),
         )
         self.assertEqual(len(serializer.data['tiles']), 2)

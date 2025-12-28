@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from typing import TypedDict
 
 from django.db import transaction
 
@@ -7,10 +7,7 @@ from hand.models import Hand, HandCorrection, HandDetection, HandTile
 from hand.tiles import validate_tile_counts
 
 
-@dataclass(frozen=True)
-class TileInput:
-    """Input data for a single tile."""
-
+class TileInput(TypedDict):
     tile_code: str
     sort_order: int
 
@@ -49,7 +46,7 @@ def create_hand_correction(
         )
 
     # Validate tile counts
-    tile_codes = [t.tile_code for t in tiles]
+    tile_codes = [t['tile_code'] for t in tiles]
     validation_errors = validate_tile_counts(tile_codes)
     if validation_errors:
         raise InvalidTileDataError(
@@ -67,8 +64,8 @@ def create_hand_correction(
         hand_tiles = [
             HandTile(
                 hand_correction=correction,
-                tile_code=tile.tile_code,
-                sort_order=tile.sort_order,
+                tile_code=tile['tile_code'],
+                sort_order=tile['sort_order'],
             )
             for tile in tiles
         ]

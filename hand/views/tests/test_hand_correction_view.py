@@ -48,7 +48,7 @@ class TestHandCorrectionViewSetCreate(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertIn('hand_correction_id', response.data)
+        self.assertIn('id', response.data)
         self.assertEqual(len(response.data['tiles']), 3)
         self.assertTrue(response.data['is_active'])
 
@@ -67,7 +67,7 @@ class TestHandCorrectionViewSetCreate(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         correction = HandCorrection.objects.get(
-            id=response.data['hand_correction_id'],
+            id=response.data['id'],
         )
         self.assertEqual(correction.detection_id, self.detection.id)
 
@@ -226,7 +226,7 @@ class TestHandCorrectionViewSetList(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(
-            response.data[0]['hand_correction_id'],
+            response.data[0]['id'],
             str(correction.id),
         )
 
@@ -257,7 +257,7 @@ class TestHandCorrectionViewSetList(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(
-            response.data[0]['hand_correction_id'],
+            response.data[0]['id'],
             str(correction1.id),
         )
 
@@ -321,7 +321,7 @@ class TestHandCorrectionViewSetRetrieve(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(
-            response.data['hand_correction_id'],
+            response.data['id'],
             str(self.correction.id),
         )
         self.assertEqual(len(response.data['tiles']), 2)

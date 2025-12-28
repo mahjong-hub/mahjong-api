@@ -23,7 +23,6 @@ class HandCorrectionSerializer(serializers.ModelSerializer):
     For read: returns all fields including computed is_active.
     """
 
-    hand_correction_id = serializers.UUIDField(source='id', read_only=True)
     is_active = serializers.SerializerMethodField()
     tiles = HandTileSerializer(many=True)
     created_at = serializers.DateTimeField(read_only=True)
@@ -39,7 +38,7 @@ class HandCorrectionSerializer(serializers.ModelSerializer):
     class Meta:
         model = HandCorrection
         fields = [
-            'hand_correction_id',
+            'id',
             'hand_id',
             'detection_id',
             'tiles',
