@@ -2,7 +2,7 @@ from rest_framework import mixins, status, viewsets
 from rest_framework.response import Response
 
 from asset.models import Asset
-from asset.views import get_install_id
+from user.views import get_install_id
 from hand.constants import HandSource
 from hand.models import HandDetection
 from hand.serializers.hand_detection_serializer import HandDetectionSerializer
@@ -57,15 +57,20 @@ class HandDetectionViewSet(
         asset = Asset.objects.get(id=asset_id)
 
         detection = find_existing_detection(asset)
+        created = False
 
         if not detection:
             # Create new detection and enqueue task
             client = Client.objects.get(install_id=install_id)
             detection = create_detection(asset, client, source)
             enqueue_detection_task(detection)
+            created = True
 
         response_serializer = self.get_serializer(detection)
+        response_status = (
+            status.HTTP_201_CREATED if created else status.HTTP_200_OK
+        )
         return Response(
             response_serializer.data,
-            status=status.HTTP_201_CREATED,
+            status=response_status,
         )

@@ -1,7 +1,7 @@
 from rest_framework import mixins, status, viewsets
 from rest_framework.response import Response
 
-from asset.views import get_install_id
+from user.views import get_install_id
 from hand.filters import HandCorrectionFilter
 from hand.models import HandCorrection
 from hand.serializers.hand_correction_serializer import (
