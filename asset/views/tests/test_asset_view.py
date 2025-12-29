@@ -52,7 +52,7 @@ class TestAssetViewSetRetrieve(APITestCase):
 
         response = self.client.get(f'/asset/{asset.id}/')
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
 class TestAssetViewSetComplete(APITestCase):
@@ -67,7 +67,7 @@ class TestAssetViewSetComplete(APITestCase):
         asset = AssetFactory(upload_session=session)
 
         response = self.client.post(
-            f'/asset/{asset.id}/upload/complete/',
+            f'/asset/{asset.id}/complete/',
             HTTP_X_INSTALL_ID=session.client.install_id,
         )
 
@@ -87,7 +87,7 @@ class TestAssetViewSetComplete(APITestCase):
         asset = AssetFactory(upload_session=session)
 
         response = self.client.post(
-            f'/asset/{asset.id}/upload/complete/',
+            f'/asset/{asset.id}/complete/',
             HTTP_X_INSTALL_ID=session.client.install_id,
         )
 
@@ -98,9 +98,9 @@ class TestAssetViewSetComplete(APITestCase):
         session = UploadSessionFactory(status=UploadStatus.PRESIGNED.value)
         asset = AssetFactory(upload_session=session)
 
-        response = self.client.post(f'/asset/{asset.id}/upload/complete/')
+        response = self.client.post(f'/asset/{asset.id}/complete/')
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     @patch('asset.services.uploads.head_object')
     def test_ownership_validation(self, mock_head):
@@ -109,8 +109,57 @@ class TestAssetViewSetComplete(APITestCase):
         other_client = ClientFactory()
 
         response = self.client.post(
-            f'/asset/{asset.id}/upload/complete/',
+            f'/asset/{asset.id}/complete/',
             HTTP_X_INSTALL_ID=other_client.install_id,
         )
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+
+class TestAssetViewSetPresignedUrl(APITestCase):
+    @patch('asset.services.uploads.generate_presigned_put_url')
+    def test_success(self, mock_presign):
+        mock_presign.return_value = 'https://s3.example.com/presigned'
+        client = ClientFactory()
+
+        response = self.client.post(
+            '/asset/presigned-url/',
+            {'content_type': 'image/jpeg', 'purpose': 'hand_photo'},
+            HTTP_X_INSTALL_ID=client.install_id,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertIn('upload_session_id', response.data)
+        self.assertIn('id', response.data)
+        self.assertIn('presigned_url', response.data)
+        self.assertIn('storage_key', response.data)
+
+    def test_invalid_content_type(self):
+        client = ClientFactory()
+
+        response = self.client.post(
+            '/asset/presigned-url/',
+            {'content_type': 'application/pdf'},
+            HTTP_X_INSTALL_ID=client.install_id,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_missing_install_id_header(self):
+        response = self.client.post(
+            '/asset/presigned-url/',
+            {'content_type': 'image/jpeg'},
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_missing_content_type(self):
+        client = ClientFactory()
+
+        response = self.client.post(
+            '/asset/presigned-url/',
+            {},
+            HTTP_X_INSTALL_ID=client.install_id,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
