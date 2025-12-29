@@ -14,12 +14,15 @@ class ClientSerializer(serializers.ModelSerializer):
         fields = ['install_id', 'label', 'created_at', 'last_seen_at']
         read_only_fields = ['created_at', 'last_seen_at']
 
-    def create(self, validated_data) -> Client:
+    def create(self, validated_data) -> tuple[Client, bool]:
         """
         Get or create a client by install_id and update last_seen_at.
 
         If the client exists, updates last_seen_at.
         If the client doesn't exist, creates a new one.
+
+        Returns:
+            Tuple of (client, created) where created is True if new client.
         """
         install_id = validated_data['install_id']
         label = validated_data.get('label', '')
@@ -35,4 +38,4 @@ class ClientSerializer(serializers.ModelSerializer):
                 client.label = label
                 client.save(update_fields=['label'])
 
-        return client
+        return client, created

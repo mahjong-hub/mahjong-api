@@ -81,7 +81,7 @@ class TestHandCorrectionViewSetCreate(APITestCase):
             format='json',
         )
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_invalid_hand_id(self):
         response = self.client.post(
@@ -264,7 +264,7 @@ class TestHandCorrectionViewSetList(APITestCase):
     def test_missing_install_id(self):
         response = self.client.get('/hand/correction/')
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_empty_list_when_no_corrections(self):
         response = self.client.get(
@@ -347,4 +347,4 @@ class TestHandCorrectionViewSetRetrieve(APITestCase):
     def test_missing_install_id(self):
         response = self.client.get(f'/hand/correction/{self.correction.id}/')
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

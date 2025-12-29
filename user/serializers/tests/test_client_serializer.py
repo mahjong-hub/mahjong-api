@@ -55,8 +55,9 @@ class TestClientSerializerCreate(TestCase):
         serializer = ClientSerializer(data={'install_id': 'new-install-123'})
         serializer.is_valid(raise_exception=True)
 
-        client = serializer.save()
+        client, created = serializer.save()
 
+        self.assertTrue(created)
         self.assertEqual(client.install_id, 'new-install-123')
         self.assertEqual(client.label, '')
         self.assertIsNotNone(client.created_at)
@@ -68,8 +69,9 @@ class TestClientSerializerCreate(TestCase):
         )
         serializer.is_valid(raise_exception=True)
 
-        client = serializer.save()
+        client, created = serializer.save()
 
+        self.assertTrue(created)
         self.assertEqual(client.label, 'My iPhone')
 
     def test_returns_existing_client(self):
@@ -77,8 +79,9 @@ class TestClientSerializerCreate(TestCase):
 
         serializer = ClientSerializer(data={'install_id': 'existing-123'})
         serializer.is_valid(raise_exception=True)
-        client = serializer.save()
+        client, created = serializer.save()
 
+        self.assertFalse(created)
         self.assertEqual(client.install_id, existing.install_id)
         self.assertEqual(Client.objects.count(), 1)
 
@@ -90,8 +93,9 @@ class TestClientSerializerCreate(TestCase):
 
         serializer = ClientSerializer(data={'install_id': 'existing-456'})
         serializer.is_valid(raise_exception=True)
-        client = serializer.save()
+        client, created = serializer.save()
 
+        self.assertFalse(created)
         self.assertGreater(client.last_seen_at, old_time)
 
     def test_updates_label_for_existing_client(self):
@@ -101,8 +105,9 @@ class TestClientSerializerCreate(TestCase):
             data={'install_id': 'existing-789', 'label': 'New Label'},
         )
         serializer.is_valid(raise_exception=True)
-        client = serializer.save()
+        client, created = serializer.save()
 
+        self.assertFalse(created)
         self.assertEqual(client.label, 'New Label')
 
     def test_does_not_update_label_if_empty(self):
@@ -112,8 +117,9 @@ class TestClientSerializerCreate(TestCase):
             data={'install_id': 'existing-abc', 'label': ''},
         )
         serializer.is_valid(raise_exception=True)
-        client = serializer.save()
+        client, created = serializer.save()
 
+        self.assertFalse(created)
         self.assertEqual(client.label, 'Keep This')
 
 

@@ -58,8 +58,7 @@ class TestHandDetectionViewSetTrigger(APITestCase):
             {'asset_id': str(uuid.uuid4())},
         )
 
-        # NotAuthenticated returns 403 in DRF when no auth classes configured
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_missing_asset_id(self):
         client = ClientFactory()
@@ -140,8 +139,7 @@ class TestDetectionViewSetRetrieve(APITestCase):
     def test_missing_install_id_header(self):
         response = self.client.get(f'/hand/detection/{uuid.uuid4()}/')
 
-        # NotAuthenticated returns 403 in DRF when no auth classes configured
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_not_found(self):
         client = ClientFactory()

@@ -5,36 +5,36 @@ from rest_framework.test import APIClient
 from user.models import Client
 
 
-class TestIdentifyEndpoint(TestCase):
+class TestUpdateEndpoint(TestCase):
     def setUp(self):
         self.api_client = APIClient()
-        self.url = '/user/client/identify/'
+        self.url = '/user/client/'
 
     def test_creates_new_client(self):
-        response = self.api_client.post(
+        response = self.api_client.put(
             self.url,
             {'install_id': 'test-device-001'},
             format='json',
         )
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['install_id'], 'test-device-001')
         self.assertEqual(Client.objects.count(), 1)
 
     def test_creates_client_with_label(self):
-        response = self.api_client.post(
+        response = self.api_client.put(
             self.url,
             {'install_id': 'test-device-002', 'label': 'My Phone'},
             format='json',
         )
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['label'], 'My Phone')
 
     def test_returns_existing_client(self):
         Client.objects.create(install_id='existing-device')
 
-        response = self.api_client.post(
+        response = self.api_client.put(
             self.url,
             {'install_id': 'existing-device'},
             format='json',
@@ -45,12 +45,12 @@ class TestIdentifyEndpoint(TestCase):
         self.assertEqual(Client.objects.count(), 1)
 
     def test_requires_install_id(self):
-        response = self.api_client.post(self.url, {}, format='json')
+        response = self.api_client.put(self.url, {}, format='json')
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_response_contains_all_fields(self):
-        response = self.api_client.post(
+        response = self.api_client.put(
             self.url,
             {'install_id': 'test-device-003'},
             format='json',
@@ -83,7 +83,7 @@ class TestMeEndpoint(TestCase):
         response = self.api_client.get(self.url)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('error', response.data)
+        self.assertEqual(response.data['code'], 'missing_install_id_header')
 
     def test_get_returns_404_for_nonexistent(self):
         response = self.api_client.get(
@@ -108,6 +108,7 @@ class TestMeEndpoint(TestCase):
         response = self.api_client.delete(self.url)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['code'], 'missing_install_id_header')
 
     def test_delete_returns_404_for_nonexistent(self):
         response = self.api_client.delete(
