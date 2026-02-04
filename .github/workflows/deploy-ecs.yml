@@ -52,7 +52,7 @@ jobs:
           df -h
 
       - name: Configure AWS credentials (OIDC)
-        uses: aws-actions/configure-aws-credentials@v5
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/mahjong-github-deploy-role
           aws-region: ${{ env.AWS_REGION }}
