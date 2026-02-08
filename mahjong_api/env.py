@@ -462,7 +462,8 @@ class EnvConfig(BaseEnvConfig):
         print('\n[Django]')
         print(f'  Secret Key: {"*" * 20} (hidden)')
         print(f'  Allowed Hosts: {self.allowed_hosts}')
-        print(f'  CSRF Origins: {self.csrf_trusted_origins}')
+        csrf_origins_count = len(self.csrf_trusted_origins or [])
+        print(f'  CSRF Origins: {csrf_origins_count} configured')
 
         print('\n[Database]')
         print(
