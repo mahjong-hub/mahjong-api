@@ -20,7 +20,7 @@ ALLOWED_HOSTS = ['*']
 CSRF_TRUSTED_ORIGINS = []
 
 
-# Database - PostgreSQL via testcontainers
+# Database
 
 _postgres = PostgresContainer('postgres:16-alpine')
 _postgres.start()
@@ -40,7 +40,7 @@ DATABASES = {
 }
 
 
-# Celery - eager mode for synchronous test execution
+# Celery
 
 CELERY_BROKER_URL = 'memory://'
 CELERY_RESULT_BACKEND = 'cache+memory://'

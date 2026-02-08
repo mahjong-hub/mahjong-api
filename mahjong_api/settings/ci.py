@@ -1,8 +1,8 @@
 """
 CI settings for mahjong_api project.
 
-Used for CI jobs that don't require Docker (linting, migration checks).
-Uses SQLite in-memory database.
+Used for fast CI jobs (linting, migration checks) without database.
+Uses SQLite in-memory.
 """
 
 from .base import *  # noqa: F401, F403
@@ -15,9 +15,7 @@ ALLOWED_HOSTS = ['*']
 
 CSRF_TRUSTED_ORIGINS = []
 
-
-# Database - SQLite in-memory for CI
-
+# Database - SQLite in-memory for fast CI
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -25,26 +23,15 @@ DATABASES = {
     },
 }
 
-
 # Celery - disabled for CI
-
 CELERY_BROKER_URL = 'memory://'
 CELERY_RESULT_BACKEND = 'cache+memory://'
 CELERY_TASK_ALWAYS_EAGER = True
 CELERY_TASK_EAGER_PROPAGATES = True
-CELERY_BROKER_TRANSPORT_OPTIONS = {}
 CELERY_TASK_DEFAULT_QUEUE = 'ci-queue'
 
+# Storage - local filesystem for CI
+# (STORAGES already defined in base.py with local storage)
 
-# AWS S3 settings (CI defaults)
-
-AWS_STORAGE_BUCKET_NAME = 'ci-bucket'
-
-
-# ML Model settings (CI defaults)
-
-MODEL_DIR = '/ml/models'
-MODEL_S3_URI = None
-TILE_DETECTOR_MODEL_NAME = 'tile_detector'
-TILE_DETECTOR_MODEL_VERSION = 'v0.1.0'
+# Detection settings
 DETECTION_CONFIDENCE_THRESHOLD = 0.5

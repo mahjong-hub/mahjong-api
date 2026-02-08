@@ -3,6 +3,7 @@
 
 import os
 import sys
+from mahjong_api.env import env
 
 
 def main():
@@ -20,4 +21,6 @@ def main():
 
 
 if __name__ == '__main__':
+    if env.debug:
+        env.print_config()
     main()

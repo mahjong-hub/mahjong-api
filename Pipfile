@@ -22,7 +22,7 @@ psycopg2-binary = "*"
 pip = "*"
 gunicorn = "*"
 whitenoise = "*"
-celery = {extras = ["sqs"], version = "*"}
+celery = "*"
 pycurl = "*"
 boto3 = "*"
 django-celery-results = "*"
@@ -34,6 +34,7 @@ pillow = "*"
 factory-boy = "*"
 testcontainers = "*"
 redis = "*"
+django-storages = {extras = ["s3"], version = "*"}
 
 [dev-packages]
 ruff = "*"

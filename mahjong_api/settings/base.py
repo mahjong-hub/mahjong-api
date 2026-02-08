@@ -23,6 +23,7 @@ INSTALLED_APPS = [
     'django_celery_results',
     'rest_framework',
     'django_filters',
+    'storages',
     'core',
     'rule',
     'hand',
@@ -96,9 +97,19 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
+# Media files (User uploads) - default to local storage
+MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_URL = '/media/'
+
+# Storage configuration (Django 4.2+)
+# Default: Local file storage for development
 STORAGES = {
     'default': {
         'BACKEND': 'django.core.files.storage.FileSystemStorage',
+        'OPTIONS': {
+            'location': MEDIA_ROOT,
+            'base_url': MEDIA_URL,
+        },
     },
     'staticfiles': {
         'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
@@ -121,7 +132,7 @@ REST_FRAMEWORK = {
 }
 
 
-# Celery - common settings
+# Celery
 
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
