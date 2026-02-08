@@ -2,8 +2,8 @@ services:
   - type: web
     name: mahjong-api
     runtime: python
-    region: singapore  # Closest to Sydney
-    plan: starter  # $7/month
+    region: singapore
+    plan: starter
     branch: main
     buildCommand: |
       pip install --upgrade pip setuptools wheel pipenv
@@ -33,7 +33,6 @@ services:
       - key: DJANGO_CSRF_TRUSTED_ORIGINS
         sync: false
 
-      # Database (Neon - set manually in Render dashboard)
       - key: DATABASE_URL
         sync: false
 
@@ -96,22 +95,18 @@ services:
       pip install -r requirements.txt
     startCommand: celery -A mahjong_api worker --loglevel=info --concurrency=2
     envVars:
-      # Python
       - key: PYTHON_VERSION
         value: 3.13
 
-      # Django
       - key: DJANGO_SETTINGS_MODULE
         value: mahjong_api.settings.production
 
       - key: DJANGO_SECRET_KEY
         sync: false  # Synced from web service
 
-      # Database (Neon - set manually in Render dashboard)
       - key: DATABASE_URL
         sync: false
 
-      # Redis
       - key: REDIS_URL
         fromService:
           type: redis
@@ -133,7 +128,6 @@ services:
       - key: CELERY_TASK_DEFAULT_QUEUE
         value: mahjong-default
 
-      # R2 Storage
       - key: R2_ACCESS_KEY_ID
         sync: false
 
@@ -149,7 +143,6 @@ services:
       - key: R2_BUCKET_MODELS
         value: mahjong-models
 
-      # ML/CV
       - key: MODAL_CV_ENDPOINT
         sync: false
 
@@ -159,7 +152,6 @@ services:
       - key: DETECTION_CONFIDENCE_THRESHOLD
         value: 0.5
 
-  # Redis for Celery
   - type: redis
     name: mahjong-redis
     ipAllowList: []
