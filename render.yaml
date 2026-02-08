@@ -23,7 +23,7 @@ services:
         value: mahjong_api.settings.production
 
       - key: DJANGO_SECRET_KEY
-        generateValue: true
+        sync: false
 
       - key: DJANGO_DEBUG
         value: "False"
@@ -104,7 +104,10 @@ services:
         value: mahjong_api.settings.production
 
       - key: DJANGO_SECRET_KEY
-        sync: false  # Synced from web service
+        fromService:
+          type: web
+          name: mahjong-api
+          envVarKey: DJANGO_SECRET_KEY
 
       - key: DATABASE_URL
         sync: false
