@@ -5,7 +5,7 @@ services:
     runtime: python
     region: singapore
     plan: free
-    branch: main
+    branch: 42-migrate-infrastructure-from-aws-to-render-cloudflare-r2
     buildCommand: |
       pip install --upgrade pip setuptools wheel pipenv
       pipenv requirements > requirements.txt
@@ -14,11 +14,12 @@ services:
     startCommand: gunicorn mahjong_api.wsgi:application
     healthCheckPath: /healthz/
     envVars:
-      # Python
       - key: PYTHON_VERSION
         value: 3.13.5
 
-      # Django
+      - key: DJANGO_ENV
+        value: production
+
       - key: DJANGO_SETTINGS_MODULE
         value: mahjong_api.settings.production
 
@@ -90,7 +91,7 @@ services:
     runtime: python
     region: singapore
     plan: free
-    branch: main
+    branch: 42-migrate-infrastructure-from-aws-to-render-cloudflare-r2
     buildCommand: |
       pip install --upgrade pip setuptools wheel pipenv
       pipenv requirements > requirements.txt

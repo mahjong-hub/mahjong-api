@@ -13,6 +13,7 @@ test = "python manage.py test"
 new-app = "python manage.py startapp"
 
 [packages]
+dj-database-url = "*"
 django = "*"
 djangorestframework = "*"
 markdown = "*"
