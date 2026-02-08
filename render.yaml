@@ -16,7 +16,7 @@ services:
     envVars:
       # Python
       - key: PYTHON_VERSION
-        value: 3.13
+        value: 3.13.5
 
       # Django
       - key: DJANGO_SETTINGS_MODULE
