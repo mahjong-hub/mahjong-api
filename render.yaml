@@ -1,6 +1,7 @@
 services:
   - type: web
     name: mahjong-api
+    repo: https://github.com/mahjong-hub/mahjong-api
     runtime: python
     region: singapore
     plan: starter
@@ -85,6 +86,7 @@ services:
 
   - type: worker
     name: mahjong-worker
+    repo: https://github.com/mahjong-hub/mahjong-api
     runtime: python
     region: singapore
     plan: starter
