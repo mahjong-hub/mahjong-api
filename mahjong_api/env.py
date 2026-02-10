@@ -291,9 +291,11 @@ class EnvConfig(BaseEnvConfig):
             return 'test'
         if self._is_ci:
             return 'ci'
-        if self._is_local:
-            return 'local'
-        return 'production'
+        if self._is_production:
+            return 'production'
+        if self._is_development:
+            return 'development'
+        return 'local'
 
     # ============================================
     # Django Settings
@@ -312,16 +314,14 @@ class EnvConfig(BaseEnvConfig):
     @property
     def debug(self) -> bool:
         """Django DEBUG mode."""
-        return self.get_bool('DJANGO_DEBUG', default=not self.is_production)
+        return self.get_bool('DJANGO_DEBUG', default=self._is_local)
 
     @property
     def allowed_hosts(self) -> list[str]:
         """Django ALLOWED_HOSTS."""
         return self.get_list(
             'DJANGO_ALLOWED_HOSTS',
-            default=['localhost', '127.0.0.1']
-            if not self.is_production
-            else [],
+            default=['localhost', '127.0.0.1'] if self._is_local else [],
         )
 
     @property
