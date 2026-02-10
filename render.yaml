@@ -22,12 +22,6 @@ projects:
           startCommand: gunicorn mahjong_api.wsgi:application
           healthCheckPath: /healthz/
           envVars:
-            - key: REDIS_URL
-              fromService:
-                type: redis
-                name: mahjong-redis
-                property: connectionString
-
             - key: CELERY_BROKER_URL
               fromService:
                 type: redis
@@ -55,12 +49,6 @@ projects:
         #     pip install -r requirements.txt
         #   startCommand: celery -A mahjong_api worker --loglevel=info --concurrency=2
         #   envVars:
-        #     - key: REDIS_URL
-        #       fromService:
-        #         type: redis
-        #         name: mahjong-redis
-        #         property: connectionString
-
         #     - key: CELERY_BROKER_URL
         #       fromService:
         #         type: redis
@@ -160,12 +148,6 @@ projects:
           startCommand: gunicorn mahjong_api.wsgi:application
           healthCheckPath: /healthz/
           envVars:
-            - key: REDIS_URL
-              fromService:
-                type: redis
-                name: mahjong-redis-dev
-                property: connectionString
-
             - key: CELERY_BROKER_URL
               fromService:
                 type: redis
@@ -191,12 +173,6 @@ projects:
             pip install -r requirements.txt
           startCommand: celery -A mahjong_api worker --loglevel=info --concurrency=2
           envVars:
-            - key: REDIS_URL
-              fromService:
-                type: redis
-                name: mahjong-redis-dev
-                property: connectionString
-
             - key: CELERY_BROKER_URL
               fromService:
                 type: redis
