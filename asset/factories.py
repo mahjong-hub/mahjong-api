@@ -30,7 +30,7 @@ class AssetFactory(factory.django.DjangoModelFactory):
 
     upload_session = factory.SubFactory(UploadSessionFactory)
     is_active = False
-    storage_provider = StorageProvider.S3.value
+    storage_provider = StorageProvider.R2.value
     storage_key = factory.LazyAttribute(
         lambda o: f'uploads/{o.upload_session.client.install_id}/{uuid.uuid4()}.jpg',
     )
