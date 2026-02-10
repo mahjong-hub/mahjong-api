@@ -259,6 +259,7 @@ class EnvConfig(BaseEnvConfig):
         )
         self._is_ci = self._django_env == 'ci'
         self._is_production = self._django_env == 'production'
+        self._is_development = self._django_env == 'development'
         self._is_local = self._django_env == 'local'
 
     # ============================================
@@ -277,12 +278,12 @@ class EnvConfig(BaseEnvConfig):
 
     @property
     def is_production(self) -> bool:
-        """Running in production (not test, not CI, DEBUG=False)."""
+        """Running in production."""
         return self._is_production
 
     @property
     def environment(self) -> str:
-        """Current environment: 'test', 'ci', 'local', or 'production'."""
+        """Current environment."""
         django_env = self.get_str('DJANGO_ENV', default='', required=False)
         if django_env:
             return django_env.lower()
@@ -368,7 +369,7 @@ class EnvConfig(BaseEnvConfig):
     @property
     def r2_endpoint_url(self) -> str:
         """R2 endpoint URL."""
-        return self.get_str('R2_ENDPOINT_URL', default='')
+        return self.get_str('R2_ENDPOINT_URL', default='').rstrip('/')
 
     @property
     def r2_bucket_images(self) -> str:
@@ -383,7 +384,7 @@ class EnvConfig(BaseEnvConfig):
     @property
     def r2_custom_domain(self) -> str:
         """R2 custom domain (optional)."""
-        return self.get_str('R2_CUSTOM_DOMAIN', default='')
+        return self.get_str('R2_CUSTOM_DOMAIN', default='').rstrip('/')
 
     # ============================================
     # Celery Settings
