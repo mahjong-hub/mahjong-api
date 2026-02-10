@@ -52,7 +52,7 @@ def run_inference(
 
     try:
         download_file(
-            bucket_name=settings.AWS_STORAGE_BUCKET_NAME,
+            bucket_name=settings.STORAGE_BUCKET_IMAGES,
             object_key=storage_key,
             local_path=temp_path,
         )
