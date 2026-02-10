@@ -99,7 +99,7 @@ projects:
             value: "False"
 
           - key: DJANGO_ALLOWED_HOSTS
-            value: api.mahjongcalc.com
+            value: api.mahjongcalc.com,mahjong-api-tip7.onrender.com
 
           - key: DJANGO_CSRF_TRUSTED_ORIGINS
             sync: false
@@ -235,7 +235,7 @@ projects:
             value: "True"
 
           - key: DJANGO_ALLOWED_HOSTS
-            value: api.dev.mahjongcalc.com
+            value: api.dev.mahjongcalc.com,mahjong-api-dev.onrender.com
 
           - key: DJANGO_CSRF_TRUSTED_ORIGINS
             sync: false
