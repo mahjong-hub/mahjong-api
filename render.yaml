@@ -40,8 +40,6 @@ projects:
                 name: mahjong-redis
                 property: connectionString
 
-            - fromGroup: production-secrets
-
         - type: worker
           name: mahjong-worker
           repo: https://github.com/mahjong-hub/mahjong-api
@@ -74,8 +72,6 @@ projects:
                 name: mahjong-redis
                 property: connectionString
 
-            - fromGroup: production-secrets
-
         - type: redis
           name: mahjong-redis
           ipAllowList: []
@@ -95,7 +91,7 @@ projects:
             value: mahjong_api.settings.production
 
           - key: DJANGO_SECRET_KEY
-            sync: false
+            generateValue: true
 
           - key: DJANGO_DEBUG
             value: "False"
@@ -175,8 +171,6 @@ projects:
                 name: mahjong-redis-dev
                 property: connectionString
 
-            - fromGroup: development-secrets
-
         - type: worker
           name: mahjong-worker-dev
           repo: https://github.com/mahjong-hub/mahjong-api
@@ -208,8 +202,6 @@ projects:
                 name: mahjong-redis-dev
                 property: connectionString
 
-            - fromGroup: development-secrets
-
         - type: redis
           name: mahjong-redis-dev
           ipAllowList: []
@@ -229,7 +221,7 @@ projects:
             value: mahjong_api.settings.development
 
           - key: DJANGO_SECRET_KEY
-            sync: false
+            generateValue: true
 
           - key: DJANGO_DEBUG
             value: "True"
