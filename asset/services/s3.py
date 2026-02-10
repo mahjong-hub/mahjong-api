@@ -7,6 +7,7 @@ from botocore.exceptions import ClientError
 from asset.constants import DEFAULT_PRESIGNED_URL_EXPIRY
 from asset.exceptions import ModelDownloadError, S3Error
 from core.exceptions import catch_and_reraise
+from mahjong_api.env import env
 
 
 @dataclass(frozen=True)
@@ -17,7 +18,13 @@ class S3ObjectMetadata:
 
 
 def get_s3_client():
-    return boto3.client('s3')
+    return boto3.client(
+        's3',
+        endpoint_url=env.r2_endpoint_url,
+        aws_access_key_id=env.r2_access_key_id,
+        aws_secret_access_key=env.r2_secret_access_key,
+        region_name='auto',
+    )
 
 
 def head_object(
