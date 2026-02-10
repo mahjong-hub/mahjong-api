@@ -57,9 +57,9 @@ PASSWORD_HASHERS = [
 ]
 
 
-# AWS S3 settings (test defaults)
+# Storage settings (test defaults)
 
-AWS_STORAGE_BUCKET_NAME = 'test-bucket'
+STORAGE_BUCKET_IMAGES = 'test-bucket'
 
 
 # ML Model settings (test defaults)

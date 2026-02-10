@@ -46,14 +46,14 @@ CELERY_TASK_DEFAULT_QUEUE = env.celery_task_default_queue
 DETECTION_CONFIDENCE_THRESHOLD = env.detection_confidence_threshold
 
 if env.r2_endpoint_url and env.r2_access_key_id:
-    R2_BUCKET_IMAGES = 'mahjong-api-images-dev'
+    STORAGE_BUCKET_IMAGES = 'mahjong-images-dev'
     STORAGES = {
         'default': {
             'BACKEND': 'storages.backends.s3.S3Storage',
             'OPTIONS': {
                 'access_key': env.r2_access_key_id,
                 'secret_key': env.r2_secret_access_key,
-                'bucket_name': R2_BUCKET_IMAGES,
+                'bucket_name': STORAGE_BUCKET_IMAGES,
                 'endpoint_url': env.r2_endpoint_url,
                 'region_name': 'auto',
                 'signature_version': 's3v4',
@@ -66,4 +66,4 @@ if env.r2_endpoint_url and env.r2_access_key_id:
             'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
         },
     }
-    MEDIA_URL = f'{env.r2_endpoint_url}/{R2_BUCKET_IMAGES}/'
+    MEDIA_URL = f'{env.r2_endpoint_url}/{STORAGE_BUCKET_IMAGES}/'

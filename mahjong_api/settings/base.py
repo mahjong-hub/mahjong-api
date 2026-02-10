@@ -116,6 +116,9 @@ STORAGES = {
     },
 }
 
+# Bucket name for direct boto3 operations (presigned URLs, downloads)
+STORAGE_BUCKET_IMAGES = ''
+
 
 # Default primary key field type
 
