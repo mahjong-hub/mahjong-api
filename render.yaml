@@ -40,6 +40,8 @@ projects:
                 name: mahjong-redis
                 property: connectionString
 
+            - fromGroup: production-secrets
+
         - type: worker
           name: mahjong-worker
           repo: https://github.com/mahjong-hub/mahjong-api
@@ -71,6 +73,8 @@ projects:
                 type: redis
                 name: mahjong-redis
                 property: connectionString
+
+            - fromGroup: production-secrets
 
         - type: redis
           name: mahjong-redis
@@ -171,6 +175,8 @@ projects:
                 name: mahjong-redis-dev
                 property: connectionString
 
+            - fromGroup: development-secrets
+
         - type: worker
           name: mahjong-worker-dev
           repo: https://github.com/mahjong-hub/mahjong-api
@@ -201,6 +207,8 @@ projects:
                 type: redis
                 name: mahjong-redis-dev
                 property: connectionString
+
+            - fromGroup: development-secrets
 
         - type: redis
           name: mahjong-redis-dev
