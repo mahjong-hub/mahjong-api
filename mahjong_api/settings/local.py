@@ -1,4 +1,5 @@
-from . import base as base_settings
+from .base import *  # noqa: F401, F403
+
 from mahjong_api.env import env
 import dj_database_url
 
@@ -32,7 +33,7 @@ STORAGES = {
             'access_key': env.r2_access_key_id,
             'secret_key': env.r2_secret_access_key,
             'bucket_name': STORAGE_BUCKET_IMAGES,
-            'endpoint_url': base_settings.R2_ENDPOINT_URL,
+            'endpoint_url': R2_ENDPOINT_URL,  # noqa: F405
             'region_name': 'auto',
             'signature_version': 's3v4',
             'addressing_style': 'auto',
@@ -44,4 +45,4 @@ STORAGES = {
         'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
     },
 }
-MEDIA_URL = f'{base_settings.R2_ENDPOINT_URL}/{STORAGE_BUCKET_IMAGES}/'
+MEDIA_URL = f'{R2_ENDPOINT_URL}/{STORAGE_BUCKET_IMAGES}/'  # noqa: F405

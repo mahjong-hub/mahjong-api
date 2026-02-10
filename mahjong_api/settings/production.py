@@ -1,4 +1,5 @@
-from . import base as base_settings
+from .base import *  # noqa: F401, F403
+
 from mahjong_api.env import env
 import logging
 import dj_database_url
@@ -28,7 +29,7 @@ logger.info('Using Cloudflare R2 for media storage')
 STORAGE_BUCKET_IMAGES = env.r2_bucket_images
 
 # Override MEDIA_URL
-MEDIA_URL = f'{base_settings.R2_ENDPOINT_URL}/{env.r2_bucket_images}/'
+MEDIA_URL = f'{R2_ENDPOINT_URL}/{env.r2_bucket_images}/'  # noqa: F405
 
 # Override storage backend
 STORAGES = {
@@ -38,7 +39,7 @@ STORAGES = {
             'access_key': env.r2_access_key_id,
             'secret_key': env.r2_secret_access_key,
             'bucket_name': env.r2_bucket_images,
-            'endpoint_url': base_settings.R2_ENDPOINT_URL,
+            'endpoint_url': R2_ENDPOINT_URL,  # noqa: F405
             'region_name': 'auto',
             'signature_version': 's3v4',
             'addressing_style': 'auto',

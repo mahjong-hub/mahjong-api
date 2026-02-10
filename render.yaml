@@ -249,12 +249,15 @@ projects:
 
           - key: R2_ACCESS_KEY_ID
             sync: false
+            previewValue: your-r2-access-key-id
 
           - key: R2_SECRET_ACCESS_KEY
             sync: false
+            previewValue: your-r2-secret-access-key
 
-          - key: R2_ENDPOINT_URL
+          - key: R2_ACCOUNT_ID
             sync: false
+            previewValue: your-r2-account-id
 
           - key: R2_BUCKET_IMAGES
             value: mahjong-images-dev
@@ -264,6 +267,7 @@ projects:
 
           - key: MODAL_CV_ENDPOINT
             sync: false
+            previewValue: https://<modal_cv_endpoint>
 
           - key: MODEL_VERSION
             value: 0.1
