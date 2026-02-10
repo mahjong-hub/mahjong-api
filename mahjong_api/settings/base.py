@@ -1,10 +1,5 @@
-"""
-Base Django settings for mahjong_api project.
-
-Common settings shared across all environments.
-"""
-
 from pathlib import Path
+from mahjong_api.env import env
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -145,3 +140,6 @@ CELERY_TASK_ACKS_LATE = True
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1
 CELERY_TASK_SOFT_TIME_LIMIT = 25
 CELERY_TASK_TIME_LIMIT = 30
+
+# R2
+R2_ENDPOINT_URL = f'https://{env.r2_account_id}.r2.cloudflarestorage.com'

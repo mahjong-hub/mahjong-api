@@ -20,7 +20,7 @@ class S3ObjectMetadata:
 def get_s3_client():
     return boto3.client(
         's3',
-        endpoint_url=env.r2_endpoint_url,
+        endpoint_url=f'https://{env.r2_account_id}.r2.cloudflarestorage.com',
         aws_access_key_id=env.r2_access_key_id,
         aws_secret_access_key=env.r2_secret_access_key,
         region_name='auto',

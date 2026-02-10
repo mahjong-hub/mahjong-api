@@ -277,6 +277,16 @@ class EnvConfig(BaseEnvConfig):
         return self._is_ci
 
     @property
+    def is_development(self) -> bool:
+        """Running in development environment."""
+        return self._is_development
+
+    @property
+    def is_local(self) -> bool:
+        """Running in local environment (default if no DJANGO_ENV)."""
+        return self._is_local
+
+    @property
     def is_production(self) -> bool:
         """Running in production."""
         return self._is_production
@@ -351,7 +361,7 @@ class EnvConfig(BaseEnvConfig):
     def has_r2(self) -> bool:
         """Check if Cloudflare R2 storage is configured."""
         return bool(
-            self.r2_endpoint_url
+            self.r2_account_id
             and self.r2_access_key_id
             and self.r2_secret_access_key,
         )
@@ -367,9 +377,9 @@ class EnvConfig(BaseEnvConfig):
         return self.get_str('R2_SECRET_ACCESS_KEY', default='')
 
     @property
-    def r2_endpoint_url(self) -> str:
-        """R2 endpoint URL."""
-        return self.get_str('R2_ENDPOINT_URL', default='').rstrip('/')
+    def r2_account_id(self) -> str:
+        """R2 account ID."""
+        return self.get_str('R2_ACCOUNT_ID', default='')
 
     @property
     def r2_bucket_images(self) -> str:
@@ -476,7 +486,14 @@ class EnvConfig(BaseEnvConfig):
         print('\n[Storage]')
         print(f'  R2 Configured: {self.has_r2}')
         if self.has_r2:
-            print(f'  R2 Endpoint: {self.r2_endpoint_url}')
+            print(f'  R2 Account ID: {"*" * len(self.r2_account_id)} (hidden)')
+            print(
+                f'  R2 Access Key ID: {"*" * len(self.r2_access_key_id)} (hidden)',
+            )
+            print(
+                f'  R2 Secret Access Key: {"*" * len(self.r2_secret_access_key)}'
+                ' (hidden)',
+            )
             print(f'  R2 Images Bucket: {self.r2_bucket_images}')
             print(f'  R2 Models Bucket: {self.r2_bucket_models}')
             if self.r2_custom_domain:
