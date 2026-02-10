@@ -1,180 +1,263 @@
-services:
-  - type: web
-    name: mahjong-api
-    repo: https://github.com/mahjong-hub/mahjong-api
-    runtime: python
-    region: singapore
-    plan: free
-    branch: 42-migrate-infrastructure-from-aws-to-render-cloudflare-r2
-    buildCommand: |
-      pip install --upgrade pip setuptools wheel pipenv
-      pipenv requirements > requirements.txt
-      pip install -r requirements.txt
-      python manage.py collectstatic --no-input
-    startCommand: gunicorn mahjong_api.wsgi:application
-    healthCheckPath: /healthz/
-    envVars:
-      - key: PYTHON_VERSION
-        value: 3.13.5
+projects:
+  - name: mahjong-api-project
+    environments:
 
-      - key: DJANGO_ENV
-        value: production
-
-      - key: DJANGO_SETTINGS_MODULE
-        value: mahjong_api.settings.production
-
-      - key: DJANGO_SECRET_KEY
-        sync: false
-
-      - key: DJANGO_DEBUG
-        value: "False"
-
-      - key: DJANGO_ALLOWED_HOSTS
-        sync: false
-
-      - key: DJANGO_CSRF_TRUSTED_ORIGINS
-        sync: false
-
-      - key: DATABASE_URL
-        sync: false
-
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: mahjong-redis
-          property: connectionString
-
-      # Celery
-      - key: CELERY_BROKER_URL
-        fromService:
-          type: redis
-          name: mahjong-redis
-          property: connectionString
-
-      - key: CELERY_RESULT_BACKEND
-        fromService:
-          type: redis
-          name: mahjong-redis
-          property: connectionString
-
-      - key: CELERY_TASK_DEFAULT_QUEUE
-        value: mahjong-default
-
-      - key: R2_ACCESS_KEY_ID
-        sync: false
-
-      - key: R2_SECRET_ACCESS_KEY
-        sync: false
-
-      - key: R2_ENDPOINT_URL
-        sync: false
-
-      - key: R2_BUCKET_IMAGES
-        value: mahjong-images-prod
-
-      - key: R2_BUCKET_MODELS
-        value: mahjong-models
-
-      # ML/CV
-      - key: MODAL_CV_ENDPOINT
-        sync: false
-
-      - key: MODEL_VERSION
-        value: v2
-
-      - key: DETECTION_CONFIDENCE_THRESHOLD
-        value: 0.5
-
-  - type: worker
-    name: mahjong-worker
-    repo: https://github.com/mahjong-hub/mahjong-api
-    runtime: python
-    region: singapore
-    plan: free
-    branch: 42-migrate-infrastructure-from-aws-to-render-cloudflare-r2
-    buildCommand: |
-      pip install --upgrade pip setuptools wheel pipenv
-      pipenv requirements > requirements.txt
-      pip install -r requirements.txt
-    startCommand: celery -A mahjong_api worker --loglevel=info --concurrency=2
-    envVars:
-      - key: PYTHON_VERSION
-        value: 3.13
-
-      - key: DJANGO_SETTINGS_MODULE
-        value: mahjong_api.settings.production
-
-      - key: DJANGO_SECRET_KEY
-        fromService:
-          type: web
+      - name: production
+        services:
+        - type: web
           name: mahjong-api
-          envVarKey: DJANGO_SECRET_KEY
+          repo: https://github.com/mahjong-hub/mahjong-api
+          runtime: python
+          region: singapore
+          plan: free
+          branch: 42-migrate-infrastructure-from-aws-to-render-cloudflare-r2
+          autoDeployTrigger: off
+          domains:
+            - api.mahjongcalc.com
+          buildCommand: |
+            pip install --upgrade pip setuptools wheel pipenv
+            pipenv requirements > requirements.txt
+            pip install -r requirements.txt
+            python manage.py collectstatic --no-input
+          startCommand: gunicorn mahjong_api.wsgi:application
+          healthCheckPath: /healthz/
+          envVars:
+            - key: REDIS_URL
+              fromService:
+                type: redis
+                name: mahjong-redis
+                property: connectionString
 
-      - key: DATABASE_URL
-        fromService:
-          type: web
-          name: mahjong-api
-          envVarKey: DATABASE_URL
+            - key: CELERY_BROKER_URL
+              fromService:
+                type: redis
+                name: mahjong-redis
+                property: connectionString
 
-      - key: REDIS_URL
-        fromService:
-          type: redis
+            - key: CELERY_RESULT_BACKEND
+              fromService:
+                type: redis
+                name: mahjong-redis
+                property: connectionString
+
+        - type: worker
+          name: mahjong-worker
+          repo: https://github.com/mahjong-hub/mahjong-api
+          runtime: python
+          region: singapore
+          plan: free
+          branch: 42-migrate-infrastructure-from-aws-to-render-cloudflare-r2
+          autoDeployTrigger: off
+          buildCommand: |
+            pip install --upgrade pip setuptools wheel pipenv
+            pipenv requirements > requirements.txt
+            pip install -r requirements.txt
+          startCommand: celery -A mahjong_api worker --loglevel=info --concurrency=2
+          envVars:
+            - key: REDIS_URL
+              fromService:
+                type: redis
+                name: mahjong-redis
+                property: connectionString
+
+            - key: CELERY_BROKER_URL
+              fromService:
+                type: redis
+                name: mahjong-redis
+                property: connectionString
+
+            - key: CELERY_RESULT_BACKEND
+              fromService:
+                type: redis
+                name: mahjong-redis
+                property: connectionString
+
+        - type: redis
           name: mahjong-redis
-          property: connectionString
+          ipAllowList: []
+          plan: free
+          maxmemoryPolicy: allkeys-lru
 
-      - key: CELERY_BROKER_URL
-        fromService:
-          type: redis
-          name: mahjong-redis
-          property: connectionString
+        envVarGroups:
+        - name: production-secrets
+          envVars:
+          - key: PYTHON_VERSION
+            value: 3.13.5
 
-      - key: CELERY_RESULT_BACKEND
-        fromService:
-          type: redis
-          name: mahjong-redis
-          property: connectionString
+          - key: DJANGO_ENV
+            value: production
 
-      - key: CELERY_TASK_DEFAULT_QUEUE
-        value: mahjong-default
+          - key: DJANGO_SETTINGS_MODULE
+            value: mahjong_api.settings.production
 
-      - key: R2_ACCESS_KEY_ID
-        fromService:
-          type: web
-          name: mahjong-api
-          envVarKey: R2_ACCESS_KEY_ID
+          - key: DJANGO_SECRET_KEY
+            sync: false
 
-      - key: R2_SECRET_ACCESS_KEY
-        fromService:
-          type: web
-          name: mahjong-api
-          envVarKey: R2_SECRET_ACCESS_KEY
+          - key: DJANGO_DEBUG
+            value: "False"
 
-      - key: R2_ENDPOINT_URL
-        fromService:
-          type: web
-          name: mahjong-api
-          envVarKey: R2_ENDPOINT_URL
+          - key: DJANGO_ALLOWED_HOSTS
+            sync: false
 
-      - key: R2_BUCKET_IMAGES
-        value: mahjong-images-prod
+          - key: DJANGO_CSRF_TRUSTED_ORIGINS
+            sync: false
 
-      - key: R2_BUCKET_MODELS
-        value: mahjong-models
+          - key: DATABASE_URL
+            sync: false
 
-      - key: MODAL_CV_ENDPOINT
-        fromService:
-          type: web
-          name: mahjong-api
-          envVarKey: MODAL_CV_ENDPOINT
+          - key: CELERY_TASK_DEFAULT_QUEUE
+            value: mahjong-default
 
-      - key: MODEL_VERSION
-        value: v1
+          - key: R2_ACCESS_KEY_ID
+            sync: false
 
-      - key: DETECTION_CONFIDENCE_THRESHOLD
-        value: 0.5
+          - key: R2_SECRET_ACCESS_KEY
+            sync: false
 
-  - type: redis
-    name: mahjong-redis
-    ipAllowList: []
-    plan: free
-    maxmemoryPolicy: allkeys-lru
+          - key: R2_ENDPOINT_URL
+            sync: false
+
+          - key: R2_BUCKET_IMAGES
+            value: mahjong-images-prod
+
+          - key: R2_BUCKET_MODELS
+            value: mahjong-models
+
+          - key: MODAL_CV_ENDPOINT
+            sync: false
+
+          - key: MODEL_VERSION
+            value: 0.1
+
+          - key: DETECTION_CONFIDENCE_THRESHOLD
+            value: 0.7
+
+      - name: development
+        services:
+        - type: web
+          name: mahjong-api-dev
+          repo: https://github.com/mahjong-hub/mahjong-api
+          runtime: python
+          region: singapore
+          plan: free
+          branch: 42-migrate-infrastructure-from-aws-to-render-cloudflare-r2
+          previews:
+            generation: automatic
+          domains:
+            - api.dev.mahjongcalc.com
+          buildCommand: |
+            pip install --upgrade pip setuptools wheel pipenv
+            pipenv requirements > requirements.txt
+            pip install -r requirements.txt
+            python manage.py collectstatic --no-input
+          startCommand: gunicorn mahjong_api.wsgi:application
+          healthCheckPath: /healthz/
+          envVars:
+            - key: REDIS_URL
+              fromService:
+                type: redis
+                name: mahjong-redis-dev
+                property: connectionString
+
+            - key: CELERY_BROKER_URL
+              fromService:
+                type: redis
+                name: mahjong-redis-dev
+                property: connectionString
+
+            - key: CELERY_RESULT_BACKEND
+              fromService:
+                type: redis
+                name: mahjong-redis-dev
+                property: connectionString
+
+        - type: worker
+          name: mahjong-worker-dev
+          repo: https://github.com/mahjong-hub/mahjong-api
+          runtime: python
+          region: singapore
+          plan: free
+          branch: 42-migrate-infrastructure-from-aws-to-render-cloudflare-r2
+          buildCommand: |
+            pip install --upgrade pip setuptools wheel pipenv
+            pipenv requirements > requirements.txt
+            pip install -r requirements.txt
+          startCommand: celery -A mahjong_api worker --loglevel=info --concurrency=2
+          envVars:
+            - key: REDIS_URL
+              fromService:
+                type: redis
+                name: mahjong-redis-dev
+                property: connectionString
+
+            - key: CELERY_BROKER_URL
+              fromService:
+                type: redis
+                name: mahjong-redis-dev
+                property: connectionString
+
+            - key: CELERY_RESULT_BACKEND
+              fromService:
+                type: redis
+                name: mahjong-redis-dev
+                property: connectionString
+
+        - type: redis
+          name: mahjong-redis-dev
+          ipAllowList: []
+          plan: free
+          maxmemoryPolicy: allkeys-lru
+
+        envVarGroups:
+        - name: development-secrets
+          envVars:
+          - key: PYTHON_VERSION
+            value: 3.13.5
+
+          - key: DJANGO_ENV
+            value: development
+
+          - key: DJANGO_SETTINGS_MODULE
+            value: mahjong_api.settings.development
+
+          - key: DJANGO_SECRET_KEY
+            sync: false
+
+          - key: DJANGO_DEBUG
+            value: "True"
+
+          - key: DJANGO_ALLOWED_HOSTS
+            sync: false
+
+          - key: DJANGO_CSRF_TRUSTED_ORIGINS
+            sync: false
+
+          - key: DATABASE_URL
+            sync: false
+
+          - key: CELERY_TASK_DEFAULT_QUEUE
+            value: mahjong-default
+
+          - key: R2_ACCESS_KEY_ID
+            sync: false
+
+          - key: R2_SECRET_ACCESS_KEY
+            sync: false
+
+          - key: R2_ENDPOINT_URL
+            sync: false
+
+          - key: R2_BUCKET_IMAGES
+            value: mahjong-images-dev
+
+          - key: R2_BUCKET_MODELS
+            value: mahjong-models
+
+          - key: MODAL_CV_ENDPOINT
+            sync: false
+
+          - key: MODEL_VERSION
+            value: 0.1
+
+          - key: DETECTION_CONFIDENCE_THRESHOLD
+            value: 0.7
