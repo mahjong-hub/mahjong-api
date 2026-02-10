@@ -9,7 +9,7 @@ shell = "python manage.py shell"
 migrate = "python manage.py migrate"
 makemigrations = "python manage.py makemigrations"
 collectstatic = "python manage.py collectstatic --noinput"
-test = "python manage.py test"
+test = "DJANGO_ENV=test python manage.py test"
 new-app = "python manage.py startapp"
 
 [packages]
