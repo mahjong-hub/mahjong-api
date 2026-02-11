@@ -23,19 +23,16 @@ psycopg2-binary = "*"
 pip = "*"
 gunicorn = "*"
 whitenoise = "*"
-celery = "*"
 pycurl = "*"
 boto3 = "*"
-django-celery-results = "*"
 psycopg = {extras = ["binary"], version = "*"}
-ultralytics = "*"
 filetype = "*"
 attrs = "*"
 pillow = "*"
 factory-boy = "*"
 testcontainers = "*"
-redis = "*"
 django-storages = {extras = ["s3"], version = "*"}
+modal = "*"
 
 [dev-packages]
 ruff = "*"

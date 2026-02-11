@@ -1,4 +1,3 @@
-from celery import current_app
 from django.conf import settings
 from django.db import transaction
 
@@ -7,9 +6,6 @@ from asset.models import Asset, AssetRef
 from hand.constants import DetectionStatus
 from hand.models import Hand, HandDetection
 from user.models import Client
-
-
-HAND_DETECTION_TASK_NAME = 'hand.tasks.run_hand_detection'
 
 
 def find_existing_detection(asset: Asset) -> HandDetection | None:
@@ -85,13 +81,4 @@ def create_detection(
         HandDetection.objects.select_related('asset_ref')
         .prefetch_related('tiles')
         .get(id=detection.id)
-    )
-
-
-def enqueue_detection_task(detection: HandDetection) -> None:
-    """Enqueue the Celery task to run detection inference."""
-    current_app.send_task(
-        HAND_DETECTION_TASK_NAME,
-        args=[str(detection.id)],
-        queue=settings.CELERY_TASK_DEFAULT_QUEUE,
     )
