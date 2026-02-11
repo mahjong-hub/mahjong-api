@@ -1,43 +1,23 @@
+import uuid
 from decimal import Decimal
 
 from django.test import TestCase
 
-from asset.constants import AssetRole, UploadStatus
-from asset.factories import AssetFactory, ClientFactory, UploadSessionFactory
-from asset.models import AssetRef
+from asset.constants import UploadStatus
+from asset.factories import AssetFactory, UploadSessionFactory
 from hand.constants import DetectionStatus
-from hand.models import DetectionTile, Hand, HandDetection
+from hand.factories import DetectionTileFactory, HandDetectionFactory
+from hand.models import HandDetection
 from hand.serializers.hand_detection_serializer import (
     DetectionTileSerializer,
     HandDetectionSerializer,
 )
+from user.factories import ClientFactory
 
 
 class TestDetectionTileSerializer(TestCase):
-    def setUp(self):
-        self.client_obj = ClientFactory()
-        self.hand = Hand.objects.create(
-            client=self.client_obj,
-            source='camera',
-        )
-        session = UploadSessionFactory(client=self.client_obj)
-        self.asset = AssetFactory(upload_session=session, is_active=True)
-        self.asset_ref = AssetRef.attach(
-            asset=self.asset,
-            owner=self.hand,
-            role=AssetRole.HAND_PHOTO.value,
-        )
-        self.detection = HandDetection.objects.create(
-            hand=self.hand,
-            asset_ref=self.asset_ref,
-            status=DetectionStatus.SUCCEEDED.value,
-            model_name='tile_detector',
-            model_version='v0.1.0',
-        )
-
     def test_serializes_all_fields(self):
-        tile = DetectionTile.objects.create(
-            detection=self.detection,
+        tile = DetectionTileFactory(
             tile_code='1B',
             x1=10,
             y1=20,
@@ -59,39 +39,19 @@ class TestDetectionTileSerializer(TestCase):
 class TestHandDetectionSerializer(TestCase):
     def setUp(self):
         self.client_obj = ClientFactory()
-        self.hand = Hand.objects.create(
-            client=self.client_obj,
-            source='camera',
-        )
         session = UploadSessionFactory(
             client=self.client_obj,
             status=UploadStatus.COMPLETED.value,
         )
         self.asset = AssetFactory(upload_session=session, is_active=True)
-        self.asset_ref = AssetRef.attach(
-            asset=self.asset,
-            owner=self.hand,
-            role=AssetRole.HAND_PHOTO.value,
-        )
 
     def test_serializes_all_fields(self):
-        detection = HandDetection.objects.create(
-            hand=self.hand,
-            asset_ref=self.asset_ref,
+        detection = HandDetectionFactory(
+            hand__client=self.client_obj,
             status=DetectionStatus.SUCCEEDED.value,
-            model_name='tile_detector',
-            model_version='v0.1.0',
             confidence_overall=Decimal('0.9500'),
         )
-        DetectionTile.objects.create(
-            detection=detection,
-            tile_code='1B',
-            x1=10,
-            y1=20,
-            x2=110,
-            y2=120,
-            confidence=Decimal('0.9876'),
-        )
+        DetectionTileFactory(detection=detection)
 
         detection = (
             HandDetection.objects.select_related('asset_ref')
@@ -101,25 +61,25 @@ class TestHandDetectionSerializer(TestCase):
         serializer = HandDetectionSerializer(instance=detection)
 
         self.assertEqual(str(serializer.data['id']), str(detection.id))
-        self.assertEqual(str(serializer.data['hand_id']), str(self.hand.id))
+        self.assertEqual(
+            str(serializer.data['hand_id']),
+            str(detection.hand_id),
+        )
         self.assertEqual(
             str(serializer.data['asset_ref_id']),
-            str(self.asset_ref.id),
+            str(detection.asset_ref_id),
         )
         self.assertEqual(serializer.data['status'], 'succeeded')
         self.assertEqual(serializer.data['model_name'], 'tile_detector')
-        self.assertEqual(serializer.data['model_version'], 'v0.1.0')
+        self.assertEqual(serializer.data['model_version'], 'v0')
         self.assertEqual(serializer.data['confidence_overall'], '0.9500')
         self.assertEqual(len(serializer.data['tiles']), 1)
         self.assertIn('created_at', serializer.data)
 
     def test_empty_tiles_list_serialized(self):
-        detection = HandDetection.objects.create(
-            hand=self.hand,
-            asset_ref=self.asset_ref,
+        detection = HandDetectionFactory(
+            hand__client=self.client_obj,
             status=DetectionStatus.PENDING.value,
-            model_name='tile_detector',
-            model_version='v0.1.0',
         )
 
         detection = (
@@ -132,12 +92,9 @@ class TestHandDetectionSerializer(TestCase):
         self.assertEqual(serializer.data['tiles'], [])
 
     def test_error_fields_serialized(self):
-        detection = HandDetection.objects.create(
-            hand=self.hand,
-            asset_ref=self.asset_ref,
+        detection = HandDetectionFactory(
+            hand__client=self.client_obj,
             status=DetectionStatus.FAILED.value,
-            model_name='tile_detector',
-            model_version='v0.1.0',
             error_code='inference_error',
             error_message='Model inference failed',
         )
@@ -156,12 +113,9 @@ class TestHandDetectionSerializer(TestCase):
         )
 
     def test_null_confidence_overall(self):
-        detection = HandDetection.objects.create(
-            hand=self.hand,
-            asset_ref=self.asset_ref,
+        detection = HandDetectionFactory(
+            hand__client=self.client_obj,
             status=DetectionStatus.PENDING.value,
-            model_name='tile_detector',
-            model_version='v0.1.0',
             confidence_overall=None,
         )
 
@@ -185,8 +139,6 @@ class TestHandDetectionSerializer(TestCase):
         self.assertIn('asset_id', serializer.errors)
 
     def test_asset_id_must_exist(self):
-        import uuid
-
         data = {'asset_id': str(uuid.uuid4())}
         serializer = HandDetectionSerializer(
             data=data,

@@ -1,115 +1,87 @@
-# import tempfile
-# from dataclasses import dataclass
-# from decimal import Decimal
-# from pathlib import Path
+import logging
+from decimal import Decimal
 
-# from django.conf import settings
+from django.conf import settings
 
-# from asset.services.s3 import download_file
-# from hand.exceptions import UnknownTileLabelError
-# from hand.tiles import label_to_tile
-# from ml.inference.model import get_model
+from asset.services.s3 import generate_presigned_get_url
+from hand.constants import DetectionStatus
+from hand.models import DetectionTile, HandDetection
+from hand.services.modal_client import submit_detection
 
-
-# @dataclass(frozen=True)
-# class DetectedTile:
-#     tile_code: str
-#     x1: int
-#     y1: int
-#     x2: int
-#     y2: int
-#     confidence: Decimal
+logger = logging.getLogger(__name__)
 
 
-# @dataclass(frozen=True)
-# class InferenceResult:
-#     tiles: list[DetectedTile]
-#     confidence_overall: Decimal
+def dispatch_detection(detection: HandDetection) -> None:
+    """
+    Dispatch a detection job to Modal.
+
+    Generates a presigned GET URL for the image, submits to Modal,
+    and updates the detection status to RUNNING with the call_id.
+    """
+    storage_key = detection.asset_ref.asset.storage_key
+
+    image_url = generate_presigned_get_url(
+        bucket_name=settings.STORAGE_BUCKET_IMAGES,
+        object_name=storage_key,
+    )
+
+    call_id = submit_detection(image_url, detection.model_version)
+
+    detection.status = DetectionStatus.RUNNING.value
+    detection.call_id = call_id
+    detection.save(update_fields=['status', 'call_id', 'updated_at'])
 
 
-# def run_inference(
-#     storage_key: str,
-#     model_name: str,
-#     model_version: str,
-# ) -> InferenceResult:
-#     """
-#     Run tile detection inference on an image.
+def process_detection_result(
+    detection: HandDetection,
+    result: dict,
+) -> HandDetection:
+    """
+    Process detection results from Modal.
 
-#     Args:
-#         storage_key: S3 key of the image to process.
-#         model_name: Name of the model to use.
-#         model_version: Version of the model to use.
+    Filters by confidence threshold, creates DetectionTile records,
+    computes overall confidence, and marks detection as SUCCEEDED.
+    """
+    threshold = settings.DETECTION_CONFIDENCE_THRESHOLD
+    detections = result.get('detections', [])
 
-#     Returns:
-#         InferenceResult with detected tiles and overall confidence.
+    tiles_to_create = []
+    confidences = []
 
-#     Raises:
-#         UnknownTileLabelError: If model predicts an unknown label.
-#     """
-#     # Download image to temp file
-#     with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as f:
-#         temp_path = f.name
+    for det in detections:
+        conf = float(det['confidence'])
+        if conf < threshold:
+            continue
 
-#     try:
-#         download_file(
-#             bucket_name=settings.STORAGE_BUCKET_IMAGES,
-#             object_key=storage_key,
-#             local_path=temp_path,
-#         )
+        tiles_to_create.append(
+            DetectionTile(
+                detection=detection,
+                tile_code=det['tile_code'],
+                x1=int(det['x1']),
+                y1=int(det['y1']),
+                x2=int(det['x2']),
+                y2=int(det['y2']),
+                confidence=Decimal(str(round(conf, 4))),
+            ),
+        )
+        confidences.append(conf)
 
-#         # Load model and run inference
-#         model = get_model(name=model_name, version=model_version)
-#         results = model(temp_path)
+    if tiles_to_create:
+        DetectionTile.objects.bulk_create(tiles_to_create)
 
-#         # Process results
-#         tiles = []
-#         confidences = []
+    if confidences:
+        avg_conf = sum(confidences) / len(confidences)
+        detection.confidence_overall = Decimal(str(round(avg_conf, 4)))
+    else:
+        detection.confidence_overall = Decimal('0')
 
-#         for result in results:
-#             boxes = result.boxes
-#             if boxes is None:
-#                 continue
+    detection.status = DetectionStatus.SUCCEEDED.value
+    detection.save(
+        update_fields=['status', 'confidence_overall', 'updated_at'],
+    )
 
-#             for i in range(len(boxes)):
-#                 # Get class label from model
-#                 cls_id = int(boxes.cls[i].item())
-#                 label = model.names[cls_id]
-
-#                 # Map label to tile code
-#                 tile = label_to_tile(label)
-#                 if tile is None:
-#                     raise UnknownTileLabelError(
-#                         message=f'Unknown tile label from model: {label}',
-#                     )
-
-#                 # Get bounding box
-#                 xyxy = boxes.xyxy[i].tolist()
-#                 conf = float(boxes.conf[i].item())
-
-#                 tiles.append(
-#                     DetectedTile(
-#                         tile_code=tile.value,
-#                         x1=int(xyxy[0]),
-#                         y1=int(xyxy[1]),
-#                         x2=int(xyxy[2]),
-#                         y2=int(xyxy[3]),
-#                         confidence=Decimal(str(round(conf, 4))),
-#                     ),
-#                 )
-#                 confidences.append(conf)
-
-#         # Calculate overall confidence (average)
-#         if confidences:
-#             avg_conf = sum(confidences) / len(confidences)
-#             confidence_overall = Decimal(str(round(avg_conf, 4)))
-#         else:
-#             confidence_overall = Decimal('0')
-
-#         return InferenceResult(
-#             tiles=tiles,
-#             confidence_overall=confidence_overall,
-#         )
-
-#     finally:
-#         # Clean up temp file
-#         Path(temp_path).unlink(missing_ok=True)
+    return (
+        HandDetection.objects.select_related('asset_ref')
+        .prefetch_related('tiles')
+        .get(id=detection.id)
+    )

@@ -14,7 +14,7 @@ def find_existing_detection(asset: Asset) -> HandDetection | None:
 
     Returns the detection if found and not failed, otherwise None.
     """
-    model_version = settings.TILE_DETECTOR_MODEL_VERSION
+    model_version = settings.MODEL_VERSION
 
     existing_ref = (
         AssetRef.objects.filter(
@@ -73,8 +73,8 @@ def create_detection(
             hand=hand,
             asset_ref=asset_ref,
             status=DetectionStatus.PENDING.value,
-            model_name=settings.TILE_DETECTOR_MODEL_NAME,
-            model_version=settings.TILE_DETECTOR_MODEL_VERSION,
+            model_name='tile_detector',
+            model_version=settings.MODEL_VERSION,
         )
 
     return (
