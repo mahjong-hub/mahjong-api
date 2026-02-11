@@ -21,6 +21,6 @@ def main():
 
 
 if __name__ == '__main__':
-    if env.debug:
+    if env.DJANGO_DEBUG and not os.environ.get('RUN_MAIN'):
         env.print_config()
     main()
