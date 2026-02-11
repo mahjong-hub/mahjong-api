@@ -7,7 +7,7 @@ from botocore.exceptions import ClientError
 from asset.constants import DEFAULT_PRESIGNED_URL_EXPIRY
 from asset.exceptions import ModelDownloadError, S3Error
 from core.exceptions import catch_and_reraise
-from mahjong_api.env import env
+from mahjong_api.settings import R2_ENDPOINT_URL
 
 
 @dataclass(frozen=True)
@@ -20,9 +20,7 @@ class S3ObjectMetadata:
 def get_s3_client():
     return boto3.client(
         's3',
-        endpoint_url=f'https://{env.r2_account_id}.r2.cloudflarestorage.com',
-        aws_access_key_id=env.r2_access_key_id,
-        aws_secret_access_key=env.r2_secret_access_key,
+        endpoint_url=R2_ENDPOINT_URL,
         region_name='auto',
     )
 
