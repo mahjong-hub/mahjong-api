@@ -32,7 +32,6 @@ pillow = "*"
 factory-boy = "*"
 testcontainers = "*"
 django-storages = {extras = ["s3"], version = "*"}
-modal = "*"
 
 [dev-packages]
 ruff = "*"
