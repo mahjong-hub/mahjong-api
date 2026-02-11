@@ -35,20 +35,17 @@ DATABASES = {
     },
 }
 
-CELERY_BROKER_URL = 'memory://'
-CELERY_RESULT_BACKEND = 'cache+memory://'
-CELERY_TASK_ALWAYS_EAGER = True
-CELERY_TASK_EAGER_PROPAGATES = True
-CELERY_BROKER_TRANSPORT_OPTIONS = {}
-CELERY_TASK_DEFAULT_QUEUE = 'test-queue'
-
-
 # Faster password hashing in tests
 PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.MD5PasswordHasher',
 ]
 
-STORAGE_BUCKET_IMAGES = 'test-bucket'
+R2_ACCESS_KEY_ID = 'test-access-key-id'
+R2_SECRET_ACCESS_KEY = 'test-secret-access-key'
+R2_BUCKET_IMAGES = 'test-bucket-images'
+R2_ENDPOINT_URL = 'http://invalid-endpoint-for-tests'
 
-TILE_DETECTOR_MODEL_VERSION = 'v0.1.0'
+MODAL_CV_ENDPOINT = 'http://invalid-endpoint-for-tests'
+MODEL_VERSION = 'v0'
+
 DETECTION_CONFIDENCE_THRESHOLD = 0.5
