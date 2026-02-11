@@ -21,52 +21,6 @@ projects:
             python manage.py collectstatic --no-input
           startCommand: gunicorn mahjong_api.wsgi:application
           healthCheckPath: /healthz/
-          envVars:
-            - key: CELERY_BROKER_URL
-              fromService:
-                type: redis
-                name: mahjong-redis
-                property: connectionString
-
-            - key: CELERY_RESULT_BACKEND
-              fromService:
-                type: redis
-                name: mahjong-redis
-                property: connectionString
-
-        # Celery workers are not supported on the free plan, so we'll run them on development or locally for now.
-        # - type: worker
-        #   name: mahjong-worker
-        #   repo: https://github.com/mahjong-hub/mahjong-api
-        #   runtime: python
-        #   region: singapore
-        #   plan: starter
-        #   branch: main
-        #   autoDeployTrigger: off
-        #   buildCommand: |
-        #     pip install --upgrade pip setuptools wheel pipenv
-        #     pipenv requirements > requirements.txt
-        #     pip install -r requirements.txt
-        #   startCommand: celery -A mahjong_api worker --loglevel=info --concurrency=2
-        #   envVars:
-        #     - key: CELERY_BROKER_URL
-        #       fromService:
-        #         type: redis
-        #         name: mahjong-redis
-        #         property: connectionString
-
-        #     - key: CELERY_RESULT_BACKEND
-        #       fromService:
-        #         type: redis
-        #         name: mahjong-redis
-        #         property: connectionString
-
-        - type: redis
-          name: mahjong-redis
-          region: singapore
-          ipAllowList: []
-          plan: free
-          maxmemoryPolicy: allkeys-lru
 
         envVarGroups:
         - name: production-secrets
@@ -87,7 +41,7 @@ projects:
             value: "False"
 
           - key: DJANGO_ALLOWED_HOSTS
-            value: api.mahjongcalc.com,mahjong-api-tip7.onrender.com
+            value: localhost,api.mahjongcalc.com,mahjong-api-tip7.onrender.com
 
           - key: DJANGO_CSRF_TRUSTED_ORIGINS
             sync: false
@@ -96,16 +50,13 @@ projects:
             sync: false
             previewValue: postgres://username:password@hostname:port/dbname
 
-          - key: CELERY_TASK_DEFAULT_QUEUE
-            value: mahjong-default
-
-          - key: R2_ACCESS_KEY_ID
+          - key: AWS_ACCESS_KEY_ID
             sync: false
-            previewValue: your-r2-access-key-id
+            previewValue: your-aws-access-key-id
 
-          - key: R2_SECRET_ACCESS_KEY
+          - key: AWS_SECRET_ACCESS_KEY
             sync: false
-            previewValue: your-r2-secret-access-key
+            previewValue: your-aws-secret-access-key
 
           - key: R2_ACCOUNT_ID
             sync: false
@@ -147,50 +98,6 @@ projects:
             python manage.py collectstatic --no-input
           startCommand: gunicorn mahjong_api.wsgi:application
           healthCheckPath: /healthz/
-          envVars:
-            - key: CELERY_BROKER_URL
-              fromService:
-                type: redis
-                name: mahjong-redis-dev
-                property: connectionString
-
-            - key: CELERY_RESULT_BACKEND
-              fromService:
-                type: redis
-                name: mahjong-redis-dev
-                property: connectionString
-
-        - type: worker
-          name: mahjong-worker-dev
-          repo: https://github.com/mahjong-hub/mahjong-api
-          runtime: python
-          region: singapore
-          plan: starter
-          branch: 42-migrate-infrastructure-from-aws-to-render-cloudflare-r2
-          buildCommand: |
-            pip install --upgrade pip setuptools wheel pipenv
-            pipenv requirements > requirements.txt
-            pip install -r requirements.txt
-          startCommand: celery -A mahjong_api worker --loglevel=info --concurrency=2
-          envVars:
-            - key: CELERY_BROKER_URL
-              fromService:
-                type: redis
-                name: mahjong-redis-dev
-                property: connectionString
-
-            - key: CELERY_RESULT_BACKEND
-              fromService:
-                type: redis
-                name: mahjong-redis-dev
-                property: connectionString
-
-        - type: redis
-          name: mahjong-redis-dev
-          region: singapore
-          ipAllowList: []
-          plan: free
-          maxmemoryPolicy: allkeys-lru
 
         envVarGroups:
         - name: development-secrets
@@ -211,7 +118,7 @@ projects:
             value: "True"
 
           - key: DJANGO_ALLOWED_HOSTS
-            value: api.dev.mahjongcalc.com,mahjong-api-dev.onrender.com
+            value: localhost,api.dev.mahjongcalc.com,mahjong-api-dev.onrender.com
 
           - key: DJANGO_CSRF_TRUSTED_ORIGINS
             sync: false
@@ -220,16 +127,13 @@ projects:
             sync: false
             previewValue: postgres://username:password@hostname:port/dbname
 
-          - key: CELERY_TASK_DEFAULT_QUEUE
-            value: mahjong-default
-
-          - key: R2_ACCESS_KEY_ID
+          - key: AWS_ACCESS_KEY_ID
             sync: false
-            previewValue: your-r2-access-key-id
+            previewValue: your-aws-access-key-id
 
-          - key: R2_SECRET_ACCESS_KEY
+          - key: AWS_SECRET_ACCESS_KEY
             sync: false
-            previewValue: your-r2-secret-access-key
+            previewValue: your-aws-secret-access-key
 
           - key: R2_ACCOUNT_ID
             sync: false
