@@ -21,6 +21,9 @@ projects:
             python manage.py collectstatic --no-input
           startCommand: gunicorn mahjong_api.wsgi:application
           healthCheckPath: /healthz/
+          buildFilter:
+            ignoredPaths:
+              - modal/*
 
         envVarGroups:
         - name: production-secrets
@@ -68,6 +71,9 @@ projects:
           - key: R2_BUCKET_MODELS
             value: mahjong-models
 
+          - key: MODAL_AUTH_TOKEN
+            generateValue: true
+
           - key: MODAL_CV_ENDPOINT
             sync: false
             previewValue: https://<modal_cv_endpoint>
@@ -98,6 +104,9 @@ projects:
             python manage.py collectstatic --no-input
           startCommand: gunicorn mahjong_api.wsgi:application
           healthCheckPath: /healthz/
+          buildFilter:
+            ignoredPaths:
+              - modal/*
 
         envVarGroups:
         - name: development-secrets
@@ -144,6 +153,9 @@ projects:
 
           - key: R2_BUCKET_MODELS
             value: mahjong-models
+
+          - key: MODAL_AUTH_TOKEN
+            generateValue: true
 
           - key: MODAL_CV_ENDPOINT
             sync: false
