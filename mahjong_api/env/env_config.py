@@ -98,6 +98,14 @@ class EnvConfig:
         group='ML/CV',
     )
 
+    MODAL_AUTH_TOKEN: str = EnvVar(
+        'MODAL_AUTH_TOKEN',
+        default='',
+        secret=True,
+        description='Modal.com authentication token',
+        group='ML/CV',
+    )
+
     MODEL_VERSION: str = EnvVar(
         'MODEL_VERSION',
         default='v0',

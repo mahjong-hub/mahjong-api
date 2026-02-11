@@ -46,6 +46,7 @@ R2_BUCKET_IMAGES = 'test-bucket-images'
 R2_ENDPOINT_URL = 'http://invalid-endpoint-for-tests'
 
 MODAL_CV_ENDPOINT = 'http://invalid-endpoint-for-tests'
+MODAL_AUTH_TOKEN = 'test-token'
 MODEL_VERSION = 'v0'
 
 DETECTION_CONFIDENCE_THRESHOLD = 0.5
