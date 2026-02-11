@@ -4,15 +4,7 @@ import factory
 
 from asset.constants import StorageProvider, UploadStatus
 from asset.models import Asset, UploadSession
-from user.models import Client
-
-
-class ClientFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = Client
-
-    install_id = factory.LazyFunction(lambda: str(uuid.uuid4()))
-    label = factory.Faker('word')
+from user.factories import ClientFactory
 
 
 class UploadSessionFactory(factory.django.DjangoModelFactory):

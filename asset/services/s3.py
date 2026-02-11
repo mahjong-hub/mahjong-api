@@ -71,6 +71,27 @@ def generate_presigned_put_url(
         )
 
 
+def generate_presigned_get_url(
+    bucket_name: str,
+    object_name: str,
+    expiration: int = 900,
+) -> str:
+    s3_client = get_s3_client()
+    with catch_and_reraise(
+        ClientError,
+        S3Error,
+        'Failed to generate presigned GET URL',
+    ):
+        return s3_client.generate_presigned_url(
+            'get_object',
+            Params={
+                'Bucket': bucket_name,
+                'Key': object_name,
+            },
+            ExpiresIn=expiration,
+        )
+
+
 def download_file(
     bucket_name: str,
     object_key: str,
