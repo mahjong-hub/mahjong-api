@@ -13,7 +13,6 @@ MODEL_DIR = '/models'
     gpu='T4',
     timeout=60,
     volumes={MODEL_DIR: volume},
-    min_containers=1,
 )
 def detect_tiles(model_version: str, image_url: str) -> dict:
     """Detect mahjong tiles in an image using a YOLO model."""
