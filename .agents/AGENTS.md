@@ -217,10 +217,10 @@ Configured in `pyproject.toml` using ruff:
 
 ## CI/CD
 
-CircleCI configuration in `.circleci/config.yml`:
+GitHub Actions workflow in `.github/workflows/ci.yml`:
 - **check_migrations**: Uses `DJANGO_ENV=ci` (SQLite, no Docker needed)
 - **lint**: Uses `DJANGO_ENV=ci` (SQLite, no Docker needed)
-- **test**: Uses `DJANGO_ENV=test` with machine executor (Docker available for testcontainers)
+- **test**: Uses `DJANGO_ENV=test` (Docker available on ubuntu-latest for testcontainers)
 
 ## Deployment
 
