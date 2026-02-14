@@ -2,7 +2,7 @@ name: Deploy Django API (Dev)
 
 on:
   workflow_run:
-    workflows: ["CI - Django API "]
+    workflows: ["CI - Django API"]
     types: [completed]
     branches: [main]
   workflow_dispatch:
