@@ -10,7 +10,7 @@ projects:
           runtime: python
           region: singapore
           plan: free
-          branch: 42-migrate-infrastructure-from-aws-to-render-cloudflare-r2
+          branch: main
           autoDeployTrigger: off
           domains:
             - api.mahjongcalc.com
@@ -68,9 +68,6 @@ projects:
           - key: R2_BUCKET_IMAGES
             value: mahjong-images-prod
 
-          - key: R2_BUCKET_MODELS
-            value: mahjong-models
-
           - key: MODAL_AUTH_TOKEN
             generateValue: true
 
@@ -92,9 +89,8 @@ projects:
           runtime: python
           region: singapore
           plan: free
-          branch: 42-migrate-infrastructure-from-aws-to-render-cloudflare-r2
-          previews:
-            generation: automatic
+          branch: main
+          autoDeployTrigger: off
           domains:
             - api.dev.mahjongcalc.com
           buildCommand: |
@@ -150,9 +146,6 @@ projects:
 
           - key: R2_BUCKET_IMAGES
             value: mahjong-images-dev
-
-          - key: R2_BUCKET_MODELS
-            value: mahjong-models
 
           - key: MODAL_AUTH_TOKEN
             generateValue: true
