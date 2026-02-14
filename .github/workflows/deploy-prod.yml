@@ -20,14 +20,8 @@ jobs:
     environment: production
     runs-on: ubuntu-latest
     env:
-      DJANGO_ENV: production
-      DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
+      DJANGO_ENV: ci
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
-      R2_BUCKET_IMAGES: mahjong-images-prod
-      R2_BUCKET_MODELS: mahjong-models
     steps:
       - uses: actions/checkout@v4
 
@@ -54,11 +48,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Deploy to Render
-        uses: johnbeynon/render-deploy-action@v0.0.8
-        with:
-          service-id: ${{ secrets.RENDER_SERVICE_ID }}
-          api-key: ${{ secrets.RENDER_API_KEY }}
-          wait-for-success: true
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: curl "$RENDER_DEPLOY_HOOK_URL"
 
   deploy-modal:
     name: Deploy Modal (Prod)
