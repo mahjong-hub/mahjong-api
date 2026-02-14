@@ -22,7 +22,9 @@ jobs:
   migrate:
     name: Migrate Dev DB
     needs: guard
-    environment: development
+    environment:
+      name: development
+      url: https://api.dev.mahjongcalc.com
     runs-on: ubuntu-latest
     env:
       DJANGO_ENV: ci
