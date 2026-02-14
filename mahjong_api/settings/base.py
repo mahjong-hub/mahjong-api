@@ -109,4 +109,8 @@ REST_FRAMEWORK = {
 }
 
 
-R2_ENDPOINT_URL = f'https://{env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com'
+R2_ENDPOINT_URL = (
+    f'https://{env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com'
+    if env.R2_ACCOUNT_ID
+    else 'http://invalid-endpoint-for-tests'
+)
