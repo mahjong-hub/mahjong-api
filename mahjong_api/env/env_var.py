@@ -48,7 +48,7 @@ class EnvVar(Generic[T]):
 
         # Handle missing/empty
         if raw_value is None or raw_value == '':
-            if self.required and not obj._is_test:
+            if self.required and not (obj._is_test or obj.is_ci):
                 raise ValueError(
                     f"Required environment variable '{self.key}' is not set. "
                     f'{self.description}',

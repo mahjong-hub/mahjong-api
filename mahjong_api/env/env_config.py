@@ -242,7 +242,7 @@ class EnvConfig:
 
             attr = getattr(self.__class__, name)
             if isinstance(attr, EnvVar):
-                if attr.required and not self._is_test:
+                if attr.required and not (self._is_test or self.is_ci):
                     value = getattr(self, name, None)
                     if not value:
                         errors.append(
