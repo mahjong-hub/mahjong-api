@@ -67,8 +67,8 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Install Modal
-        run: pip install modal
+      - name: Install dependencies
+        run: pip install -r modal_app/src/requirements.txt
 
       - name: Deploy Modal app (prod)
         run: modal deploy -m modal_app.src.app
