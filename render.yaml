@@ -91,6 +91,8 @@ projects:
           plan: free
           branch: main
           autoDeployTrigger: off
+          previews:
+            generation: automatic
           domains:
             - api.dev.mahjongcalc.com
           buildCommand: |
