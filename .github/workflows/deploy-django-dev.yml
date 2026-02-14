@@ -51,7 +51,9 @@ jobs:
   deploy-render:
     name: Deploy Render (Dev)
     needs: migrate
-    environment: development
+    environment:
+      name: development
+      url: https://api.dev.mahjongcalc.com
     runs-on: ubuntu-latest
     steps:
       - name: Deploy to Render

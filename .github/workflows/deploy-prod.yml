@@ -17,7 +17,9 @@ jobs:
   migrate:
     name: Migrate Prod DB
     needs: ci-django
-    environment: production
+    environment:
+      name: production
+      url: https://api.mahjongcalc.com
     runs-on: ubuntu-latest
     env:
       DJANGO_ENV: ci
@@ -44,7 +46,9 @@ jobs:
   deploy-render:
     name: Deploy Render (Prod)
     needs: migrate
-    environment: production
+    environment:
+      name: production
+      url: https://api.mahjongcalc.com
     runs-on: ubuntu-latest
     steps:
       - name: Deploy to Render
