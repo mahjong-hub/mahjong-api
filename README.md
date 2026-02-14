@@ -41,7 +41,7 @@ flowchart TB
     Mobile -->|4. POST /hand/detection/| API
     API -->|5. Submit detection| Modal
     Modal -->|6. Read image| R2
-    Mobile -->|7. GET /hand/detection/{id}/poll/| API
+    Mobile -->|7. GET /hand/detection/:id/poll/| API
     API -->|8. Poll results| Modal
     API <--> DB
 ```
