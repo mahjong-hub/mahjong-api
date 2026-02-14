@@ -1,7 +1,15 @@
-name: CI
+name: PR CI - Django API
 
 on:
   pull_request:
+    paths-ignore:
+      - 'modal_app/**'
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'modal_app/**'
+  workflow_call:
 
 jobs:
   check_migrations:

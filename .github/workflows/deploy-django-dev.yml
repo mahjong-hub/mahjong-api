@@ -1,0 +1,64 @@
+name: Deploy Django API (Dev)
+
+on:
+  workflow_run:
+    workflows: ["PR CI - Django API"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  guard:
+    name: Check CI Result
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "CI passed, proceeding with deployment"
+
+  migrate:
+    name: Migrate Dev DB
+    needs: guard
+    environment: development
+    runs-on: ubuntu-latest
+    env:
+      DJANGO_ENV: development
+      DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+      R2_BUCKET_IMAGES: mahjong-images-dev
+      R2_BUCKET_MODELS: mahjong-models
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools wheel pipenv
+          pipenv requirements > requirements.txt
+          pip install -r requirements.txt
+
+      - name: Run migrations
+        run: python manage.py migrate --noinput
+
+      - name: Show migration status
+        run: python manage.py showmigrations
+
+  deploy-render:
+    name: Deploy Render (Dev)
+    needs: migrate
+    environment: development
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to Render
+        uses: johnbeynon/render-deploy-action@v0.0.8
+        with:
+          service-id: ${{ secrets.RENDER_SERVICE_ID }}
+          api-key: ${{ secrets.RENDER_API_KEY }}
+          wait-for-success: true
