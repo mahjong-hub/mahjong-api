@@ -8,6 +8,9 @@ on:
       - 'modal_app/**'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   deploy-modal:
     name: Deploy Modal (Dev)
@@ -16,6 +19,7 @@ jobs:
     env:
       MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
       MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
+      MODAL_ENVIRONMENT: dev
     steps:
       - uses: actions/checkout@v4
 
@@ -27,4 +31,4 @@ jobs:
         run: pip install modal
 
       - name: Deploy Modal app (dev)
-        run: modal deploy -m modal_app.src.app --env=dev
+        run: modal deploy -m modal_app.src.app

@@ -2,10 +2,12 @@ name: Deploy Django API (Dev)
 
 on:
   workflow_run:
-    workflows: ["PR CI - Django API"]
+    workflows: ["CI - Django API "]
     types: [completed]
     branches: [main]
   workflow_dispatch:
+
+permissions: {}
 
 jobs:
   guard:
