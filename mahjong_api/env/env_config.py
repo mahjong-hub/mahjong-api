@@ -78,13 +78,6 @@ class EnvConfig:
         group='Storage',
     )
 
-    R2_BUCKET_MODELS: str = EnvVar(
-        'R2_BUCKET_MODELS',
-        required=True,
-        description='R2 bucket for models',
-        group='Storage',
-    )
-
     R2_CUSTOM_DOMAIN: str | None = EnvVar(
         'R2_CUSTOM_DOMAIN',
         description='R2 custom domain',
