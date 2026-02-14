@@ -5,7 +5,7 @@ from django.test import TestCase, override_settings
 
 from hand.constants import DetectionStatus
 from hand.factories import HandDetectionFactory
-from hand.models import DetectionTile, HandDetection
+from hand.models import HandDetection
 from hand.services.hand_inference import (
     dispatch_detection,
     process_detection_result,

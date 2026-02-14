@@ -2,7 +2,7 @@ from django.test import TestCase
 
 from hand.constants import DetectionStatus
 from hand.exceptions import DetectionHandMismatchError, InvalidTileDataError
-from hand.factories import HandDetectionFactory, HandFactory
+from hand.factories import HandDetectionFactory
 from hand.models import HandTile
 from hand.services.hand_correction import TileInput, create_hand_correction
 

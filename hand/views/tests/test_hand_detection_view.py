@@ -9,7 +9,7 @@ from asset.constants import UploadStatus
 from asset.factories import AssetFactory, UploadSessionFactory
 from hand.constants import DetectionStatus
 from hand.factories import HandDetectionFactory
-from hand.models import DetectionTile, HandDetection
+from hand.models import HandDetection
 from user.factories import ClientFactory
 
 
