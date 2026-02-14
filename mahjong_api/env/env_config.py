@@ -86,14 +86,14 @@ class EnvConfig:
 
     MODAL_CV_ENDPOINT: str = EnvVar(
         'MODAL_CV_ENDPOINT',
-        default='',
+        required=True,
         description='Modal.com CV endpoint',
         group='ML/CV',
     )
 
     MODAL_AUTH_TOKEN: str = EnvVar(
         'MODAL_AUTH_TOKEN',
-        default='',
+        required=True,
         secret=True,
         description='Modal.com authentication token',
         group='ML/CV',
@@ -170,7 +170,7 @@ class EnvConfig:
     @property
     def has_modal(self) -> bool:
         """Check if Modal.com is configured."""
-        return bool(self.MODAL_CV_ENDPOINT)
+        return bool(self.MODAL_CV_ENDPOINT and self.MODAL_AUTH_TOKEN)
 
     def print_config(self, show_secrets: bool = False) -> None:
         """Print all environment variables grouped by category."""
