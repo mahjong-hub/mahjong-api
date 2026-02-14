@@ -1,17 +1,9 @@
-"""
-Base Django settings for mahjong_api project.
-
-Common settings shared across all environments.
-"""
-
 from pathlib import Path
+from mahjong_api.env import env
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
-
-
-# Application definition
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -20,9 +12,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'django_celery_results',
     'rest_framework',
     'django_filters',
+    'storages',
     'core',
     'rule',
     'hand',
@@ -61,9 +53,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'mahjong_api.wsgi.application'
 
-
-# Password validation
-
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',  # noqa: E501
@@ -79,9 +68,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
-# Internationalization
-
 LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'UTC'
@@ -90,28 +76,30 @@ USE_I18N = True
 
 USE_TZ = True
 
-
-# Static files (CSS, JavaScript, Images)
-
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_URL = '/media/'
 
 STORAGES = {
     'default': {
         'BACKEND': 'django.core.files.storage.FileSystemStorage',
+        'OPTIONS': {
+            'location': MEDIA_ROOT,
+            'base_url': MEDIA_URL,
+        },
     },
     'staticfiles': {
         'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
     },
 }
 
+STORAGE_BUCKET_IMAGES = ''
 
-# Default primary key field type
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-
-# REST Framework
 
 REST_FRAMEWORK = {
     'EXCEPTION_HANDLER': 'core.exceptions.exception_handler',
@@ -121,13 +109,8 @@ REST_FRAMEWORK = {
 }
 
 
-# Celery - common settings
-
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_SERIALIZER = 'json'
-CELERY_TIMEZONE = 'Australia/Sydney'
-CELERY_TASK_ACKS_LATE = True
-CELERY_WORKER_PREFETCH_MULTIPLIER = 1
-CELERY_TASK_SOFT_TIME_LIMIT = 25
-CELERY_TASK_TIME_LIMIT = 30
+R2_ENDPOINT_URL = (
+    f'https://{env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com'
+    if env.R2_ACCOUNT_ID
+    else 'http://invalid-endpoint-for-tests'
+)

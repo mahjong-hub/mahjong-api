@@ -40,6 +40,9 @@ class HandDetection(TimeStampedModel):
         default=DetectionStatus.PENDING.value,
     )
 
+    # Modal function call ID for async polling
+    call_id = models.CharField(max_length=128, blank=True, default='')
+
     # Model identification
     model_name = models.CharField(max_length=128, blank=True, default='')
     model_version = models.CharField(max_length=64, blank=True, default='')

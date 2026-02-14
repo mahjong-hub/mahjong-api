@@ -19,13 +19,9 @@ ALLOWED_HOSTS = ['*']
 
 CSRF_TRUSTED_ORIGINS = []
 
-
-# Database - PostgreSQL via testcontainers
-
 _postgres = PostgresContainer('postgres:16-alpine')
 _postgres.start()
 
-# Register cleanup on exit
 atexit.register(_postgres.stop)
 
 DATABASES = {
@@ -39,33 +35,18 @@ DATABASES = {
     },
 }
 
-
-# Celery - eager mode for synchronous test execution
-
-CELERY_BROKER_URL = 'memory://'
-CELERY_RESULT_BACKEND = 'cache+memory://'
-CELERY_TASK_ALWAYS_EAGER = True
-CELERY_TASK_EAGER_PROPAGATES = True
-CELERY_BROKER_TRANSPORT_OPTIONS = {}
-CELERY_TASK_DEFAULT_QUEUE = 'test-queue'
-
-
 # Faster password hashing in tests
-
 PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.MD5PasswordHasher',
 ]
 
+R2_ACCESS_KEY_ID = 'test-access-key-id'
+R2_SECRET_ACCESS_KEY = 'test-secret-access-key'
+R2_BUCKET_IMAGES = 'test-bucket-images'
+R2_ENDPOINT_URL = 'http://invalid-endpoint-for-tests'
 
-# AWS S3 settings (test defaults)
+MODAL_CV_ENDPOINT = 'http://invalid-endpoint-for-tests'
+MODAL_AUTH_TOKEN = 'test-token'
+MODEL_VERSION = 'v0'
 
-AWS_STORAGE_BUCKET_NAME = 'test-bucket'
-
-
-# ML Model settings (test defaults)
-
-MODEL_DIR = '/ml/models'
-MODEL_S3_URI = None
-TILE_DETECTOR_MODEL_NAME = 'tile_detector'
-TILE_DETECTOR_MODEL_VERSION = 'v0.1.0'
 DETECTION_CONFIDENCE_THRESHOLD = 0.5

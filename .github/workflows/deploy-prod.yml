@@ -1,0 +1,74 @@
+name: Deploy (Prod)
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ci-django:
+    name: Django API CI
+    uses: ./.github/workflows/ci-django.yml
+
+  migrate:
+    name: Migrate Prod DB
+    needs: ci-django
+    environment: production
+    runs-on: ubuntu-latest
+    env:
+      DJANGO_ENV: ci
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools wheel pipenv
+          pipenv requirements > requirements.txt
+          pip install -r requirements.txt
+
+      - name: Run migrations
+        run: python manage.py migrate --noinput
+
+      - name: Show migration status
+        run: python manage.py showmigrations
+
+  deploy-render:
+    name: Deploy Render (Prod)
+    needs: migrate
+    environment: production
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to Render
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: curl "$RENDER_DEPLOY_HOOK_URL"
+
+  deploy-modal:
+    name: Deploy Modal (Prod)
+    environment: production
+    runs-on: ubuntu-latest
+    env:
+      MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
+      MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
+      MODAL_ENVIRONMENT: prod
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install Modal
+        run: pip install modal
+
+      - name: Deploy Modal app (prod)
+        run: modal deploy -m modal_app.src.app

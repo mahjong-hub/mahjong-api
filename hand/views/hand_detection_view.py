@@ -1,17 +1,26 @@
+import logging
+
 from rest_framework import mixins, status, viewsets
+from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from asset.models import Asset
 from user.views import get_install_id
-from hand.constants import HandSource
+from user.models import Client
+from asset.models import Asset
+from hand.constants import DetectionStatus, HandSource
 from hand.models import HandDetection
 from hand.serializers.hand_detection_serializer import HandDetectionSerializer
 from hand.services.hand_detection import (
-    create_detection,
-    enqueue_detection_task,
     find_existing_detection,
+    create_detection,
 )
-from user.models import Client
+from hand.services.hand_inference import (
+    dispatch_detection,
+    process_detection_result,
+)
+from hand.services.modal_client import poll_detection_result
+
+logger = logging.getLogger(__name__)
 
 
 class HandDetectionViewSet(
@@ -24,6 +33,7 @@ class HandDetectionViewSet(
     Endpoints:
         POST /hand/detection/
         GET /hand/detection/{id}/
+        GET /hand/detection/{id}/poll/
     """
 
     serializer_class = HandDetectionSerializer
@@ -60,10 +70,9 @@ class HandDetectionViewSet(
         created = False
 
         if not detection:
-            # Create new detection and enqueue task
             client = Client.objects.get(install_id=install_id)
             detection = create_detection(asset, client, source)
-            enqueue_detection_task(detection)
+            dispatch_detection(detection)
             created = True
 
         response_serializer = self.get_serializer(detection)
@@ -74,3 +83,23 @@ class HandDetectionViewSet(
             response_serializer.data,
             status=response_status,
         )
+
+    @action(detail=True, methods=['get'])
+    def poll(self, request, pk=None):
+        """Poll Modal for detection results."""
+        detection = self.get_object()
+
+        if detection.status in (
+            DetectionStatus.SUCCEEDED.value,
+            DetectionStatus.FAILED.value,
+        ):
+            serializer = self.get_serializer(detection)
+            return Response(serializer.data)
+
+        result = poll_detection_result(detection.call_id)
+
+        if result:
+            detection = process_detection_result(detection, result)
+
+        serializer = self.get_serializer(detection)
+        return Response(serializer.data)

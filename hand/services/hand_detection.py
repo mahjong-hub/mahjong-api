@@ -1,4 +1,3 @@
-from celery import current_app
 from django.conf import settings
 from django.db import transaction
 
@@ -9,16 +8,13 @@ from hand.models import Hand, HandDetection
 from user.models import Client
 
 
-HAND_DETECTION_TASK_NAME = 'hand.tasks.run_hand_detection'
-
-
 def find_existing_detection(asset: Asset) -> HandDetection | None:
     """
     Find existing non-failed detection for the asset with current model version.
 
     Returns the detection if found and not failed, otherwise None.
     """
-    model_version = settings.TILE_DETECTOR_MODEL_VERSION
+    model_version = settings.MODEL_VERSION
 
     existing_ref = (
         AssetRef.objects.filter(
@@ -77,21 +73,12 @@ def create_detection(
             hand=hand,
             asset_ref=asset_ref,
             status=DetectionStatus.PENDING.value,
-            model_name=settings.TILE_DETECTOR_MODEL_NAME,
-            model_version=settings.TILE_DETECTOR_MODEL_VERSION,
+            model_name='tile_detector',
+            model_version=settings.MODEL_VERSION,
         )
 
     return (
         HandDetection.objects.select_related('asset_ref')
         .prefetch_related('tiles')
         .get(id=detection.id)
-    )
-
-
-def enqueue_detection_task(detection: HandDetection) -> None:
-    """Enqueue the Celery task to run detection inference."""
-    current_app.send_task(
-        HAND_DETECTION_TASK_NAME,
-        args=[str(detection.id)],
-        queue=settings.CELERY_TASK_DEFAULT_QUEUE,
     )

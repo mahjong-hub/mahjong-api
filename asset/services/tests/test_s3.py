@@ -5,6 +5,7 @@ from django.test import TestCase
 
 from asset.exceptions import S3Error
 from asset.services.s3 import (
+    generate_presigned_get_url,
     generate_presigned_put_url,
     head_object,
 )
@@ -79,3 +80,56 @@ class TestGeneratePresignedPutUrl(TestCase):
 
         with self.assertRaises(S3Error):
             generate_presigned_put_url('bucket', 'key', 'image/jpeg')
+
+
+class TestGeneratePresignedGetUrl(TestCase):
+    @patch('asset.services.s3.get_s3_client')
+    def test_returns_presigned_url(self, mock_get_client):
+        mock_client = MagicMock()
+        mock_client.generate_presigned_url.return_value = (
+            'https://presigned-get.url'
+        )
+        mock_get_client.return_value = mock_client
+
+        result = generate_presigned_get_url('bucket', 'key')
+
+        self.assertEqual(result, 'https://presigned-get.url')
+        mock_client.generate_presigned_url.assert_called_once_with(
+            'get_object',
+            Params={
+                'Bucket': 'bucket',
+                'Key': 'key',
+            },
+            ExpiresIn=900,
+        )
+
+    @patch('asset.services.s3.get_s3_client')
+    def test_custom_expiration(self, mock_get_client):
+        mock_client = MagicMock()
+        mock_client.generate_presigned_url.return_value = (
+            'https://presigned-get.url'
+        )
+        mock_get_client.return_value = mock_client
+
+        generate_presigned_get_url('bucket', 'key', expiration=1800)
+
+        mock_client.generate_presigned_url.assert_called_once_with(
+            'get_object',
+            Params={
+                'Bucket': 'bucket',
+                'Key': 'key',
+            },
+            ExpiresIn=1800,
+        )
+
+    @patch('asset.services.s3.get_s3_client')
+    def test_raises_s3_error_on_failure(self, mock_get_client):
+        mock_client = MagicMock()
+        mock_client.generate_presigned_url.side_effect = ClientError(
+            {'Error': {'Code': '500'}},
+            'GeneratePresignedUrl',
+        )
+        mock_get_client.return_value = mock_client
+
+        with self.assertRaises(S3Error):
+            generate_presigned_get_url('bucket', 'key')

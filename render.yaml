@@ -1,0 +1,163 @@
+projects:
+  - name: mahjong-api-project
+    environments:
+
+      - name: production
+        services:
+        - type: web
+          name: mahjong-api
+          repo: https://github.com/mahjong-hub/mahjong-api
+          runtime: python
+          region: singapore
+          plan: free
+          branch: main
+          autoDeployTrigger: off
+          domains:
+            - api.mahjongcalc.com
+          buildCommand: |
+            pip install --upgrade pip setuptools wheel pipenv
+            pipenv requirements > requirements.txt
+            pip install -r requirements.txt
+            python manage.py collectstatic --no-input
+          startCommand: gunicorn mahjong_api.wsgi:application
+          healthCheckPath: /healthz/
+          buildFilter:
+            ignoredPaths:
+              - modal_app/*
+
+        envVarGroups:
+        - name: production-secrets
+          envVars:
+          - key: PYTHON_VERSION
+            value: 3.13.5
+
+          - key: DJANGO_ENV
+            value: production
+
+          - key: DJANGO_SETTINGS_MODULE
+            value: mahjong_api.settings.production
+
+          - key: DJANGO_SECRET_KEY
+            generateValue: true
+
+          - key: DJANGO_DEBUG
+            value: "False"
+
+          - key: DJANGO_ALLOWED_HOSTS
+            value: localhost,api.mahjongcalc.com,mahjong-api-tip7.onrender.com
+
+          - key: DJANGO_CSRF_TRUSTED_ORIGINS
+            sync: false
+
+          - key: DATABASE_URL
+            sync: false
+            previewValue: postgres://username:password@hostname:port/dbname
+
+          - key: AWS_ACCESS_KEY_ID
+            sync: false
+            previewValue: your-aws-access-key-id
+
+          - key: AWS_SECRET_ACCESS_KEY
+            sync: false
+            previewValue: your-aws-secret-access-key
+
+          - key: R2_ACCOUNT_ID
+            sync: false
+            previewValue: your-r2-account-id
+
+          - key: R2_BUCKET_IMAGES
+            value: mahjong-images-prod
+
+          - key: MODAL_AUTH_TOKEN
+            generateValue: true
+
+          - key: MODAL_CV_ENDPOINT
+            sync: false
+            previewValue: https://<modal_cv_endpoint>
+
+          - key: MODEL_VERSION
+            value: 0.1
+
+          - key: DETECTION_CONFIDENCE_THRESHOLD
+            value: 0.7
+
+      - name: development
+        services:
+        - type: web
+          name: mahjong-api-dev
+          repo: https://github.com/mahjong-hub/mahjong-api
+          runtime: python
+          region: singapore
+          plan: free
+          branch: main
+          autoDeployTrigger: off
+          previews:
+            generation: automatic
+          domains:
+            - api.dev.mahjongcalc.com
+          buildCommand: |
+            pip install --upgrade pip setuptools wheel pipenv
+            pipenv requirements > requirements.txt
+            pip install -r requirements.txt
+            python manage.py collectstatic --no-input
+          startCommand: gunicorn mahjong_api.wsgi:application
+          healthCheckPath: /healthz/
+          buildFilter:
+            ignoredPaths:
+              - modal_app/*
+
+        envVarGroups:
+        - name: development-secrets
+          envVars:
+          - key: PYTHON_VERSION
+            value: 3.13.5
+
+          - key: DJANGO_ENV
+            value: development
+
+          - key: DJANGO_SETTINGS_MODULE
+            value: mahjong_api.settings.development
+
+          - key: DJANGO_SECRET_KEY
+            generateValue: true
+
+          - key: DJANGO_DEBUG
+            value: "True"
+
+          - key: DJANGO_ALLOWED_HOSTS
+            value: localhost,api.dev.mahjongcalc.com,mahjong-api-dev.onrender.com
+
+          - key: DJANGO_CSRF_TRUSTED_ORIGINS
+            sync: false
+
+          - key: DATABASE_URL
+            sync: false
+            previewValue: postgres://username:password@hostname:port/dbname
+
+          - key: AWS_ACCESS_KEY_ID
+            sync: false
+            previewValue: your-aws-access-key-id
+
+          - key: AWS_SECRET_ACCESS_KEY
+            sync: false
+            previewValue: your-aws-secret-access-key
+
+          - key: R2_ACCOUNT_ID
+            sync: false
+            previewValue: your-r2-account-id
+
+          - key: R2_BUCKET_IMAGES
+            value: mahjong-images-dev
+
+          - key: MODAL_AUTH_TOKEN
+            generateValue: true
+
+          - key: MODAL_CV_ENDPOINT
+            sync: false
+            previewValue: https://<modal_cv_endpoint>
+
+          - key: MODEL_VERSION
+            value: 0.1
+
+          - key: DETECTION_CONFIDENCE_THRESHOLD
+            value: 0.7

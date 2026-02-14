@@ -1,0 +1,34 @@
+name: Deploy Modal (Dev)
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'modal_app/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-modal:
+    name: Deploy Modal (Dev)
+    environment: development
+    runs-on: ubuntu-latest
+    env:
+      MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
+      MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
+      MODAL_ENVIRONMENT: dev
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install Modal
+        run: pip install modal
+
+      - name: Deploy Modal app (dev)
+        run: modal deploy -m modal_app.src.app

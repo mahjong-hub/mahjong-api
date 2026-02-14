@@ -15,6 +15,7 @@ ALLOWED_IMAGE_MIMES = frozenset(
 
 class StorageProvider(Enum):
     S3 = 's3'
+    R2 = 'r2'
     LOCAL = 'local'
 
 
