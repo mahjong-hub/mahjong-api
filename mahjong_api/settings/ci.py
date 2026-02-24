@@ -22,6 +22,7 @@ if os.getenv('DATABASE_URL'):
         'default': dj_database_url.config(
             conn_max_age=0,
             ssl_require=True,
+            engine='psqlextra.backend',  # required for localisation support
         ),
     }
 else:

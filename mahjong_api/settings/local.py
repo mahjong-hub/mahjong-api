@@ -14,6 +14,7 @@ DATABASES = {
     'default': dj_database_url.config(
         default=env.DATABASE_URL,
         conn_max_age=0,  # Don't persist connections
+        engine='psqlextra.backend',  # required for localisation support
     ),
 }
 
