@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "b26634c8963ca86ea2e07aaab9c34a9766cd5f97574b4e01f73f9a0b6f783b8c"
+            "sha256": "16734ec9851549a88e7e9482d345b4ea23817bc0175d72496bbd3760610b081b"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -185,6 +185,13 @@
             "markers": "python_version >= '3.7'",
             "version": "==3.4.4"
         },
+        "deprecation": {
+            "hashes": [
+                "sha256:c0392f676a6146f0238db5744d73e786a43510d54033f80994ef2f4c9df192ed",
+                "sha256:dc9b4f252b7aca8165ce2764a71da92a653b5ffbf7a389461d7a640f6536ecb2"
+            ],
+            "version": "==2.0.7"
+        },
         "dj-database-url": {
             "hashes": [
                 "sha256:155a56fbbecbaaf1348ccd73bf29138b4c9988363ba08261a0f0145e392e638c",
@@ -196,12 +203,12 @@
         },
         "django": {
             "hashes": [
-                "sha256:3046a53b0e40d4b676c3b774c73411d7184ae2745fe8ce5e45c0f33d3ddb71a7",
-                "sha256:610dd3b13d15ec3f1e1d257caedd751db8033c5ad8ea0e2d1219a8acf446ecc6"
+                "sha256:7f2d292ad8b9ee35e405d965fbbad293758b858c34bbf7f3df551aeeac6f02d3",
+                "sha256:e7130df33ada9ab5e5e929bc19346a20fe383f5454acb2cc004508f242ee92c0"
             ],
             "index": "pypi",
-            "markers": "python_version >= '3.12'",
-            "version": "==6.0.2"
+            "markers": "python_version >= '3.10'",
+            "version": "==5.2.11"
         },
         "django-filter": {
             "hashes": [
@@ -211,6 +218,22 @@
             "index": "pypi",
             "markers": "python_version >= '3.10'",
             "version": "==25.2"
+        },
+        "django-localized-fields": {
+            "hashes": [
+                "sha256:21ffd76d15d2b9b557b13839290ea00be03bc16bcaa4ffdbff5a5d74b81d26de"
+            ],
+            "index": "pypi",
+            "markers": "python_version >= '3.6'",
+            "version": "==6.7"
+        },
+        "django-postgres-extra": {
+            "hashes": [
+                "sha256:0a4f9fd7f843e2ef5cfe7a291fcb883bd72d2ca8e4b369d0070866205e00b404",
+                "sha256:9e47c436d033712d0e2611b8c1583566dd4f97700e5360001bf3623913a92046"
+            ],
+            "markers": "python_version >= '3.6'",
+            "version": "==2.0.9"
         },
         "django-storages": {
             "extras": [
