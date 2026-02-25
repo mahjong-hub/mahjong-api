@@ -1,9 +1,8 @@
 import uuid
 
-from django.db.models import ProtectedError
 from django.test import TestCase
 
-from core.factories import TileFactory, TileSetFactory
+from hand.tiles import TileCode, TileSetCode
 from rule.constants import GroupType, Operator, TargetType
 from rule.factories import GroupConditionFactory, RuleLogicFactory
 from rule.models import GroupCondition
@@ -51,33 +50,31 @@ class TestGroupConditionModel(TestCase):
         condition.refresh_from_db()
         self.assertIsNone(condition.value_int)
 
-    def test_tile_code_fk(self):
-        tile = TileFactory(code='1B', suit='B', rank=1)
-        condition = GroupConditionFactory(tile_code=tile)
+    def test_tile_code_accepts_valid_tile_code(self):
+        condition = GroupConditionFactory(tile_code=TileCode.BAMBOO_1.value)
 
         condition.refresh_from_db()
-        self.assertEqual(condition.tile_code, tile)
+        self.assertEqual(condition.tile_code, TileCode.BAMBOO_1.value)
 
-    def test_tile_set_code_fk(self):
-        tile_set = TileSetFactory(code='DRAGONS')
-        condition = GroupConditionFactory(tile_set_code=tile_set)
+    def test_tile_set_code_accepts_valid_tile_set_code(self):
+        condition = GroupConditionFactory(
+            tile_set_code=TileSetCode.DRAGONS.value,
+        )
 
         condition.refresh_from_db()
-        self.assertEqual(condition.tile_set_code, tile_set)
+        self.assertEqual(condition.tile_set_code, TileSetCode.DRAGONS.value)
 
-    def test_tile_protected_from_delete(self):
-        tile = TileFactory(code='2B', suit='B', rank=2)
-        GroupConditionFactory(tile_code=tile)
+    def test_tile_code_defaults_to_none(self):
+        condition = GroupConditionFactory()
 
-        with self.assertRaises(ProtectedError):
-            tile.delete()
+        condition.refresh_from_db()
+        self.assertIsNone(condition.tile_code)
 
-    def test_tile_set_protected_from_delete(self):
-        tile_set = TileSetFactory(code='WINDS')
-        GroupConditionFactory(tile_set_code=tile_set)
+    def test_tile_set_code_defaults_to_none(self):
+        condition = GroupConditionFactory()
 
-        with self.assertRaises(ProtectedError):
-            tile_set.delete()
+        condition.refresh_from_db()
+        self.assertIsNone(condition.tile_set_code)
 
     def test_group_type_stores_value(self):
         for gt in GroupType:

@@ -2,7 +2,7 @@ import uuid
 
 from django.db import models
 
-from core.models import Tile, TileSet
+from hand.tiles import TileCode, TileSetCode
 from rule.constants import Operator, TargetType
 
 
@@ -17,19 +17,17 @@ class CountCondition(models.Model):
         max_length=16,
         choices=TargetType.count_choices(),
     )
-    tile_code = models.ForeignKey(
-        Tile,
+    tile_code = models.CharField(
+        max_length=4,
+        choices=TileCode.choices(),
         null=True,
         blank=True,
-        to_field='code',
-        on_delete=models.PROTECT,
     )
-    tile_set_code = models.ForeignKey(
-        TileSet,
+    tile_set_code = models.CharField(
+        max_length=20,
+        choices=TileSetCode.choices(),
         null=True,
         blank=True,
-        to_field='code',
-        on_delete=models.PROTECT,
     )
     operator = models.CharField(max_length=16, choices=Operator.choices())
     value_int = models.IntegerField()

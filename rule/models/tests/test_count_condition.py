@@ -1,9 +1,8 @@
 import uuid
 
-from django.db.models import ProtectedError
 from django.test import TestCase
 
-from core.factories import TileFactory, TileSetFactory
+from hand.tiles import TileCode, TileSetCode
 from rule.constants import Operator, TargetType
 from rule.factories import CountConditionFactory, RuleLogicFactory
 from rule.models import CountCondition
@@ -43,33 +42,31 @@ class TestCountConditionModel(TestCase):
 
         self.assertEqual(logic.count_conditions.count(), 2)
 
-    def test_tile_code_fk(self):
-        tile = TileFactory(code='1C', suit='C', rank=1)
-        condition = CountConditionFactory(tile_code=tile)
+    def test_tile_code_accepts_valid_tile_code(self):
+        condition = CountConditionFactory(tile_code=TileCode.CHARACTER_1.value)
 
         condition.refresh_from_db()
-        self.assertEqual(condition.tile_code, tile)
+        self.assertEqual(condition.tile_code, TileCode.CHARACTER_1.value)
 
-    def test_tile_set_code_fk(self):
-        tile_set = TileSetFactory(code='HONORS')
-        condition = CountConditionFactory(tile_set_code=tile_set)
+    def test_tile_set_code_accepts_valid_tile_set_code(self):
+        condition = CountConditionFactory(
+            tile_set_code=TileSetCode.HONORS.value,
+        )
 
         condition.refresh_from_db()
-        self.assertEqual(condition.tile_set_code, tile_set)
+        self.assertEqual(condition.tile_set_code, TileSetCode.HONORS.value)
 
-    def test_tile_protected_from_delete(self):
-        tile = TileFactory(code='2C', suit='C', rank=2)
-        CountConditionFactory(tile_code=tile)
+    def test_tile_code_defaults_to_none(self):
+        condition = CountConditionFactory()
 
-        with self.assertRaises(ProtectedError):
-            tile.delete()
+        condition.refresh_from_db()
+        self.assertIsNone(condition.tile_code)
 
-    def test_tile_set_protected_from_delete(self):
-        tile_set = TileSetFactory(code='TERMINALS')
-        CountConditionFactory(tile_set_code=tile_set)
+    def test_tile_set_code_defaults_to_none(self):
+        condition = CountConditionFactory()
 
-        with self.assertRaises(ProtectedError):
-            tile_set.delete()
+        condition.refresh_from_db()
+        self.assertIsNone(condition.tile_set_code)
 
     def test_target_type_tile_set(self):
         condition = CountConditionFactory(
