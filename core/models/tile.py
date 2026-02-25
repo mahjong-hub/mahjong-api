@@ -10,6 +10,3 @@ class Tile(models.Model):
 
     class Meta:
         ordering = ['suit', 'rank']
-
-    def __str__(self):
-        return self.code

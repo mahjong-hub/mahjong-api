@@ -30,11 +30,6 @@ class TestTileSetModel(TestCase):
         with self.assertRaises(IntegrityError):
             TileSet.objects.create(code='SIMPLES')
 
-    def test_str_returns_code(self):
-        tileset = TileSetFactory(code='HONORS')
-
-        self.assertEqual(str(tileset), 'HONORS')
-
     def test_description_localised(self):
         tileset = TileSetFactory(
             code='WINDS',

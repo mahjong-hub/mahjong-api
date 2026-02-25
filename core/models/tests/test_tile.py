@@ -41,11 +41,6 @@ class TestTileModel(TestCase):
                 label={'en': '1 Character'},
             )
 
-    def test_str_returns_code(self):
-        tile = TileFactory(code='9W', suit='W', rank=9)
-
-        self.assertEqual(str(tile), '9W')
-
     def test_label_localised(self):
         tile = TileFactory(
             code='GD',
