@@ -3,9 +3,7 @@ import uuid
 from django.db import models
 
 from core.models import Tile, TileSet
-from rule.constants import Operator
-
-_TARGET_TYPE_CHOICES = [('tile', 'tile'), ('tile_set', 'tile_set')]
+from rule.constants import Operator, TargetType
 
 
 class CountCondition(models.Model):
@@ -15,7 +13,10 @@ class CountCondition(models.Model):
         related_name='count_conditions',
         on_delete=models.CASCADE,
     )
-    target_type = models.CharField(max_length=16, choices=_TARGET_TYPE_CHOICES)
+    target_type = models.CharField(
+        max_length=16,
+        choices=TargetType.count_choices(),
+    )
     tile_code = models.ForeignKey(
         Tile,
         null=True,

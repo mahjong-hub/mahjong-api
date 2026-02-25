@@ -64,6 +64,13 @@ class TargetType(Enum):
     def choices(cls):
         return [(item.value, item.name) for item in cls]
 
+    @classmethod
+    def count_choices(cls):
+        return [
+            (cls.TILE.value, cls.TILE.name),
+            (cls.TILE_SET.value, cls.TILE_SET.name),
+        ]
+
 
 class SuitConstraint(Enum):
     SINGLE_SUIT = 'single_suit'

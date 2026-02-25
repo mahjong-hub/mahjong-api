@@ -4,7 +4,7 @@ from django.db.models import ProtectedError
 from django.test import TestCase
 
 from core.factories import TileFactory, TileSetFactory
-from rule.constants import Operator
+from rule.constants import Operator, TargetType
 from rule.factories import CountConditionFactory, RuleLogicFactory
 from rule.models import CountCondition
 
@@ -14,7 +14,7 @@ class TestCountConditionModel(TestCase):
         condition = CountConditionFactory()
 
         self.assertIsInstance(condition.id, uuid.UUID)
-        self.assertEqual(condition.target_type, 'tile')
+        self.assertEqual(condition.target_type, TargetType.TILE.value)
         self.assertEqual(condition.operator, Operator.AT_LEAST.value)
         self.assertEqual(condition.value_int, 1)
         self.assertIsNone(condition.tile_code)
@@ -72,7 +72,9 @@ class TestCountConditionModel(TestCase):
             tile_set.delete()
 
     def test_target_type_tile_set(self):
-        condition = CountConditionFactory(target_type='tile_set')
+        condition = CountConditionFactory(
+            target_type=TargetType.TILE_SET.value,
+        )
 
         condition.refresh_from_db()
-        self.assertEqual(condition.target_type, 'tile_set')
+        self.assertEqual(condition.target_type, TargetType.TILE_SET.value)

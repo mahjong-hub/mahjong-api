@@ -69,7 +69,7 @@ class CountConditionFactory(factory.django.DjangoModelFactory):
         model = CountCondition
 
     rule_logic = factory.SubFactory(RuleLogicFactory)
-    target_type = 'tile'
+    target_type = TargetType.TILE.value
     operator = Operator.AT_LEAST.value
     value_int = 1
 
