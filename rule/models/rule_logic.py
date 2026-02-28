@@ -2,7 +2,7 @@ import uuid
 
 from django.db import models
 
-from rule.constants import CombineOp, LogicType
+from rule.constants import CombineOp
 
 
 class RuleLogic(models.Model):
@@ -12,12 +12,9 @@ class RuleLogic(models.Model):
         related_name='logic',
         on_delete=models.CASCADE,
     )
-    logic_type = models.CharField(max_length=32, choices=LogicType.choices())
     combine_op = models.CharField(
         max_length=8,
         choices=CombineOp.choices(),
         blank=True,
         default='',
     )
-    min_match = models.IntegerField(null=True, blank=True)
-    note = models.TextField(blank=True, default='')

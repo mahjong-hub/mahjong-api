@@ -1,26 +1,7 @@
 import factory
 
-from rule.constants import (
-    CombineOp,
-    ContextField,
-    ContextOperator,
-    GroupType,
-    LogicType,
-    Operator,
-    RuleKind,
-    SpecialShapeType,
-    SuitConstraint,
-    TargetType,
-)
-from rule.models import (
-    ContextCondition,
-    CountCondition,
-    GroupCondition,
-    RuleDefinition,
-    RuleLogic,
-    SpecialShapeCondition,
-    SuitCondition,
-)
+from rule.constants import CombineOp, ConditionType, Operator, RuleKind
+from rule.models import RuleCondition, RuleDefinition, RuleExclusion, RuleLogic
 
 
 class RuleDefinitionFactory(factory.django.DjangoModelFactory):
@@ -41,52 +22,24 @@ class RuleLogicFactory(factory.django.DjangoModelFactory):
         model = RuleLogic
 
     rule_definition = factory.SubFactory(RuleDefinitionFactory)
-    logic_type = LogicType.STANDARD.value
     combine_op = CombineOp.AND.value
 
 
-class GroupConditionFactory(factory.django.DjangoModelFactory):
+class RuleConditionFactory(factory.django.DjangoModelFactory):
     class Meta:
-        model = GroupCondition
+        model = RuleCondition
 
     rule_logic = factory.SubFactory(RuleLogicFactory)
-    group_type = GroupType.PUNG.value
+    type = ConditionType.PUNG.value
     operator = Operator.AT_LEAST.value
-    value_int = 1
-    target_type = TargetType.TILE.value
+    value = 1
+    target = None
+    context = None
 
 
-class SuitConditionFactory(factory.django.DjangoModelFactory):
+class RuleExclusionFactory(factory.django.DjangoModelFactory):
     class Meta:
-        model = SuitCondition
+        model = RuleExclusion
 
-    rule_logic = factory.SubFactory(RuleLogicFactory)
-    suit_constraint = SuitConstraint.SINGLE_SUIT.value
-
-
-class CountConditionFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = CountCondition
-
-    rule_logic = factory.SubFactory(RuleLogicFactory)
-    target_type = TargetType.TILE.value
-    operator = Operator.AT_LEAST.value
-    value_int = 1
-
-
-class ContextConditionFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = ContextCondition
-
-    rule_logic = factory.SubFactory(RuleLogicFactory)
-    context_field = ContextField.WIN_SOURCE.value
-    operator = ContextOperator.EQUALS.value
-    value = 'self_draw'
-
-
-class SpecialShapeConditionFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = SpecialShapeCondition
-
-    rule_logic = factory.SubFactory(RuleLogicFactory)
-    special_shape = SpecialShapeType.SEVEN_PAIRS.value
+    rule = factory.SubFactory(RuleDefinitionFactory)
+    excludes = factory.SubFactory(RuleDefinitionFactory)

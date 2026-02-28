@@ -13,15 +13,6 @@ class RuleKind(Enum):
         return [(item.value, item.name) for item in cls]
 
 
-class LogicType(Enum):
-    STANDARD = 'standard'
-    SPECIAL_SHAPE = 'special_shape'
-
-    @classmethod
-    def choices(cls):
-        return [(item.value, item.name) for item in cls]
-
-
 class CombineOp(Enum):
     AND = 'and'
     OR = 'or'
@@ -31,92 +22,69 @@ class CombineOp(Enum):
         return [(item.value, item.name) for item in cls]
 
 
-class GroupType(Enum):
-    CHOW = 'chow'
-    PUNG = 'pung'
-    KONG = 'kong'
-    PAIR = 'pair'
-
-    @classmethod
-    def choices(cls):
-        return [(item.value, item.name) for item in cls]
-
-
 class Operator(Enum):
     AT_LEAST = 'at_least'
+    AT_MOST = 'at_most'
     EXACTLY = 'exactly'
-    NOT_EXISTS = 'not_exists'
+    IS = 'is'
+    NONE = 'none'
 
     @classmethod
     def choices(cls):
         return [(item.value, item.name) for item in cls]
 
 
-class TargetType(Enum):
-    TILE = 'tile'
-    TILE_SET = 'tile_set'
-    SEAT_WIND = 'seat_wind'
-    ROUND_WIND = 'round_wind'
-    ANY_HONOR = 'any_honor'
-    ANY_TERMINAL = 'any_terminal'
-
-    @classmethod
-    def choices(cls):
-        return [(item.value, item.name) for item in cls]
-
-    @classmethod
-    def count_choices(cls):
-        return [
-            (cls.TILE.value, cls.TILE.name),
-            (cls.TILE_SET.value, cls.TILE_SET.name),
-        ]
-
-
-class SuitConstraint(Enum):
-    SINGLE_SUIT = 'single_suit'
-    SINGLE_SUIT_WITH_HONORS = 'single_suit_with_honors'
-    NO_HONORS = 'no_honors'
-    ALL_SUITS_REQUIRED = 'all_suits_required'
+class ConditionType(Enum):
+    HAND = 'hand'  # whole-hand structure check
+    CHOW = 'chow'  # chow meld count
+    PUNG = 'pung'  # pung meld count
+    KONG = 'kong'  # kong meld count
+    PAIR = 'pair'  # pair count
+    TILE = 'tile'  # individual tile count
+    SUIT = 'suit'  # distinct suit count
+    WIN = 'win'  # win condition check
 
     @classmethod
     def choices(cls):
         return [(item.value, item.name) for item in cls]
 
 
-class ContextField(Enum):
-    WIN_SOURCE = 'win_source'
-    SEAT_WIND = 'seat_wind'
-    ROUND_WIND = 'round_wind'
-    IS_OPEN_HAND = 'is_open_hand'
-
-    @classmethod
-    def choices(cls):
-        return [(item.value, item.name) for item in cls]
-
-
-class ContextOperator(Enum):
-    EQUALS = 'equals'
-    NOT_EQUALS = 'not_equals'
-
-    @classmethod
-    def choices(cls):
-        return [(item.value, item.name) for item in cls]
-
-
-class SpecialShapeType(Enum):
+class ConditionTarget(Enum):
+    HONOR = 'honor'
+    DRAGON = 'dragon'
+    WIND = 'wind'
+    RED = 'red'
+    GREEN = 'green'
+    WHITE = 'white'
+    TERMINAL = 'terminal'
+    SIMPLE = 'simple'
+    FLOWER = 'flower'
+    BAMBOO = 'bamboo'
+    DOT = 'dot'
+    CHARACTER = 'character'
+    STANDARD = 'standard'
     SEVEN_PAIRS = 'seven_pairs'
     THIRTEEN_ORPHANS = 'thirteen_orphans'
     NINE_GATES = 'nine_gates'
+    ALL_GREEN = 'all_green'
 
     @classmethod
     def choices(cls):
         return [(item.value, item.name) for item in cls]
 
 
-class WinSource(Enum):
+class ConditionContext(Enum):
+    CONCEALED = 'concealed'
+    SEAT_WIND = 'seat_wind'
+    ROUND_WIND = 'round_wind'
     SELF_DRAW = 'self_draw'
-    DISCARD = 'discard'
     ROB_KONG = 'rob_kong'
+    REPLACEMENT = 'replacement'
+    DOUBLE_REPLACEMENT = 'double_replacement'
+    LAST_TILE = 'last_tile'
+    LAST_DISCARD = 'last_discard'
+    HEAVENLY = 'heavenly'
+    EARTHLY = 'earthly'
 
     @classmethod
     def choices(cls):
