@@ -14,7 +14,16 @@ class RuleLogic(models.Model):
     )
     combine_op = models.CharField(
         max_length=8,
-        choices=CombineOp.choices(),
         blank=True,
         default='',
     )
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(
+                    combine_op__in=[e.value for e in CombineOp] + [''],
+                ),
+                name='rule_rulelogic_combine_op_valid',
+            ),
+        ]
