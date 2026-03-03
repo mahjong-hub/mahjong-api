@@ -15,7 +15,6 @@ class UploadSession(TimeStampedModel):
         related_name='upload_sessions',
     )
     status = models.CharField(
-        choices=UploadStatus.choices(),
         max_length=32,
         default=UploadStatus.CREATED.value,
     )
@@ -25,4 +24,10 @@ class UploadSession(TimeStampedModel):
         indexes = [
             models.Index(fields=['client', 'created_at']),
             models.Index(fields=['status']),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(status__in=[e.value for e in UploadStatus]),
+                name='asset_uploadsession_status_valid',
+            ),
         ]
