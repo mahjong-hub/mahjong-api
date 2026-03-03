@@ -1,5 +1,6 @@
 import uuid
 
+from django.db import IntegrityError
 from django.test import TestCase
 
 from rule.constants import ConditionType, Operator
@@ -59,3 +60,45 @@ class TestRuleConditionModel(TestCase):
 
         condition.refresh_from_db()
         self.assertIsNone(condition.context)
+
+    def test_operator_rejects_invalid_value(self):
+        logic = RuleLogicFactory()
+
+        with self.assertRaises(IntegrityError):
+            RuleCondition.objects.create(
+                rule_logic=logic,
+                operator='not_valid',
+                type=ConditionType.PUNG.value,
+            )
+
+    def test_type_rejects_invalid_value(self):
+        logic = RuleLogicFactory()
+
+        with self.assertRaises(IntegrityError):
+            RuleCondition.objects.create(
+                rule_logic=logic,
+                operator=Operator.AT_LEAST.value,
+                type='not_valid',
+            )
+
+    def test_target_rejects_invalid_value(self):
+        logic = RuleLogicFactory()
+
+        with self.assertRaises(IntegrityError):
+            RuleCondition.objects.create(
+                rule_logic=logic,
+                operator=Operator.AT_LEAST.value,
+                type=ConditionType.PUNG.value,
+                target='not_valid',
+            )
+
+    def test_context_rejects_invalid_value(self):
+        logic = RuleLogicFactory()
+
+        with self.assertRaises(IntegrityError):
+            RuleCondition.objects.create(
+                rule_logic=logic,
+                operator=Operator.AT_LEAST.value,
+                type=ConditionType.PUNG.value,
+                context='not_valid',
+            )

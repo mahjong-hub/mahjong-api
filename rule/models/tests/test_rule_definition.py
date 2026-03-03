@@ -81,3 +81,11 @@ class TestRuleDefinitionModel(TestCase):
 
         codes = list(RuleDefinition.objects.values_list('code', flat=True))
         self.assertEqual(codes, sorted(codes))
+
+    def test_kind_rejects_invalid_value(self):
+        with self.assertRaises(IntegrityError):
+            RuleDefinition.objects.create(
+                code='invalid_kind_rule',
+                label={'en': 'Test'},
+                kind='not_a_valid_kind',
+            )

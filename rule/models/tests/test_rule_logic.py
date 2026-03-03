@@ -1,5 +1,6 @@
 import uuid
 
+from django.db import IntegrityError
 from django.test import TestCase
 
 from rule.constants import CombineOp
@@ -40,3 +41,12 @@ class TestRuleLogicModel(TestCase):
 
         logic.refresh_from_db()
         self.assertEqual(logic.combine_op, '')
+
+    def test_combine_op_rejects_invalid_value(self):
+        definition = RuleDefinitionFactory()
+
+        with self.assertRaises(IntegrityError):
+            RuleLogic.objects.create(
+                rule_definition=definition,
+                combine_op='not_valid',
+            )
