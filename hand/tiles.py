@@ -78,6 +78,24 @@ class TileCode(Enum):
         return [(tile.value, tile.name) for tile in cls]
 
 
+class TileSetCode(Enum):
+    BAMBOO = 'bamboo'
+    CHARACTER = 'character'
+    DOT = 'dot'
+    WINDS = 'winds'
+    DRAGONS = 'dragons'
+    HONORS = 'honors'
+    TERMINALS = 'terminals'
+    SIMPLES = 'simples'
+    FLOWERS = 'flowers'
+    SEASONS = 'seasons'
+    BONUS = 'bonus'
+
+    @classmethod
+    def choices(cls):
+        return [(item.value, item.name) for item in cls]
+
+
 # Model label to TileCode mapping
 # The ML model outputs class labels that may differ from our canonical codes.
 # This mapping converts model labels to TileCode enum values.

@@ -11,9 +11,12 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'django.contrib.postgres',
     'django.contrib.staticfiles',
-    'rest_framework',
+    'localized_fields',
     'django_filters',
+    'rest_framework',
+    'psqlextra',
     'storages',
     'core',
     'rule',
@@ -68,7 +71,12 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'en'
+LANGUAGES = (
+    ('en', 'English'),  # default language
+    ('zh-hk', 'Chinese (Hong Kong)'),
+    ('zh-cn', 'Chinese (Simplified)'),
+)
 
 TIME_ZONE = 'UTC'
 
