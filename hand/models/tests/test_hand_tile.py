@@ -12,5 +12,5 @@ class TestHandTileModel(TestCase):
         with self.assertRaises(IntegrityError):
             HandTile.objects.create(
                 hand_correction=correction,
-                tile_code='INVALID',
+                tile_code='XX',
             )

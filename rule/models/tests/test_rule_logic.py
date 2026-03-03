@@ -48,5 +48,5 @@ class TestRuleLogicModel(TestCase):
         with self.assertRaises(IntegrityError):
             RuleLogic.objects.create(
                 rule_definition=definition,
-                combine_op='not_valid',
+                combine_op='xor',
             )
