@@ -5,6 +5,7 @@ from django.db import models
 
 class RuleExclusion(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    # TODO: Add rule version field
     rule = models.ForeignKey(
         'rule.RuleDefinition',
         related_name='exclusions',

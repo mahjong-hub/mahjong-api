@@ -272,31 +272,11 @@ RULES = [
     },
 ]
 
-EXCLUSIONS = [
-    ('full_flush',            'half_flush'),
-    ('all_terminals',         'all_pungs'),
-    ('all_honors',            'all_pungs'),
-    ('half_terminals',        'all_pungs'),
-    ('big_three_dragons',     'little_three_dragons'),
-    ('big_three_dragons',     'dragon_pung_red'),
-    ('big_three_dragons',     'dragon_pung_green'),
-    ('big_three_dragons',     'dragon_pung_white'),
-    ('big_four_winds',        'little_four_winds'),
-    ('big_four_winds',        'seat_wind_pung'),
-    ('big_four_winds',        'round_wind_pung'),
-    ('little_four_winds',     'seat_wind_pung'),
-    ('little_four_winds',     'round_wind_pung'),
-    ('four_concealed_pungs',  'all_pungs'),
-    ('four_concealed_pungs',  'concealed_hand'),
-    ('all_kongs',             'all_pungs'),
-]
-
 
 def seed_rules(apps, schema_editor):
     RuleDefinition = apps.get_model('rule', 'RuleDefinition')
     RuleLogic = apps.get_model('rule', 'RuleLogic')
     RuleCondition = apps.get_model('rule', 'RuleCondition')
-    RuleExclusion = apps.get_model('rule', 'RuleExclusion')
 
     for rule in RULES:
         rd, _ = RuleDefinition.objects.update_or_create(
@@ -310,12 +290,6 @@ def seed_rules(apps, schema_editor):
         rl.conditions.all().delete()
         for c in rule['conditions']:
             RuleCondition.objects.create(rule_logic=rl, **c)
-
-    for rule_code, excludes_code in EXCLUSIONS:
-        rule = RuleDefinition.objects.get(code=rule_code)
-        excl = RuleDefinition.objects.get(code=excludes_code)
-        RuleExclusion.objects.get_or_create(rule=rule, excludes=excl)
-        RuleExclusion.objects.get_or_create(rule=excl, excludes=rule)
 
 
 def unseed_rules(apps, schema_editor):
