@@ -53,14 +53,6 @@ class RuleConditionFactory(factory.django.DjangoModelFactory):
     context = None
 
 
-class RuleExclusionFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = RuleExclusion
-
-    rule = factory.SubFactory(RuleDefinitionFactory)
-    excludes = factory.SubFactory(RuleDefinitionFactory)
-
-
 class RulesetFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Ruleset
@@ -78,6 +70,15 @@ class RulesetVersionFactory(factory.django.DjangoModelFactory):
     ruleset = factory.SubFactory(RulesetFactory)
     version_int = factory.Sequence(lambda n: n + 1)
     status = RulesetVersionStatus.DRAFT.value
+
+
+class RuleExclusionFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = RuleExclusion
+
+    ruleset_version = factory.SubFactory(RulesetVersionFactory)
+    rule = factory.SubFactory(RuleDefinitionFactory)
+    excludes = factory.SubFactory(RuleDefinitionFactory)
 
 
 class RulesetScoringConfigFactory(factory.django.DjangoModelFactory):
