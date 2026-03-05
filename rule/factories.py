@@ -1,7 +1,23 @@
 import factory
 
-from rule.constants import CombineOp, ConditionType, Operator, RuleKind
-from rule.models import RuleCondition, RuleDefinition, RuleExclusion, RuleLogic
+from rule.constants import (
+    CombineOp,
+    ConditionType,
+    Operator,
+    RuleKind,
+    RulesetVersionStatus,
+    ScoringUnit,
+)
+from rule.models import (
+    RuleCondition,
+    RuleDefinition,
+    RuleExclusion,
+    RuleLogic,
+    Ruleset,
+    RulesetItem,
+    RulesetScoringConfig,
+    RulesetVersion,
+)
 
 
 class RuleDefinitionFactory(factory.django.DjangoModelFactory):
@@ -43,3 +59,41 @@ class RuleExclusionFactory(factory.django.DjangoModelFactory):
 
     rule = factory.SubFactory(RuleDefinitionFactory)
     excludes = factory.SubFactory(RuleDefinitionFactory)
+
+
+class RulesetFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Ruleset
+
+    client = None
+    name = factory.Sequence(lambda n: f'Ruleset {n}')
+    country_code = 'HKG'
+    is_public = False
+
+
+class RulesetVersionFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = RulesetVersion
+
+    ruleset = factory.SubFactory(RulesetFactory)
+    version_int = factory.Sequence(lambda n: n + 1)
+    status = RulesetVersionStatus.DRAFT.value
+
+
+class RulesetScoringConfigFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = RulesetScoringConfig
+
+    ruleset_version = factory.SubFactory(RulesetVersionFactory)
+    scoring_unit = ScoringUnit.FAAN.value
+    min_scoring_unit = None
+
+
+class RulesetItemFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = RulesetItem
+
+    ruleset_version = factory.SubFactory(RulesetVersionFactory)
+    rule_definition = factory.SubFactory(RuleDefinitionFactory)
+    value_int = 1
+    enabled = True
