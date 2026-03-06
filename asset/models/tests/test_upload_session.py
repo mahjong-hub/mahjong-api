@@ -1,5 +1,6 @@
 import uuid
 
+from django.db import IntegrityError
 from django.test import TestCase
 
 from asset.constants import UploadStatus, UploadPurpose
@@ -56,3 +57,10 @@ class TestUploadSessionModel(TestCase):
         self.client.delete()
 
         self.assertEqual(UploadSession.objects.count(), 0)
+
+    def test_status_rejects_invalid_value(self):
+        with self.assertRaises(IntegrityError):
+            UploadSession.objects.create(
+                client=self.client,
+                status='not_valid',
+            )

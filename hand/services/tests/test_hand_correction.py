@@ -1,32 +1,18 @@
 from django.test import TestCase
 
-from asset.constants import AssetRole
-from asset.factories import AssetFactory, ClientFactory, UploadSessionFactory
-from asset.models import AssetRef
 from hand.constants import DetectionStatus
 from hand.exceptions import DetectionHandMismatchError, InvalidTileDataError
-from hand.models import Hand, HandDetection, HandTile
+from hand.factories import HandDetectionFactory
+from hand.models import HandTile
 from hand.services.hand_correction import TileInput, create_hand_correction
 
 
 class TestCreateHandCorrection(TestCase):
     def setUp(self):
-        self.client = ClientFactory()
-        self.hand = Hand.objects.create(client=self.client, source='camera')
-        session = UploadSessionFactory(client=self.client)
-        self.asset = AssetFactory(upload_session=session, is_active=True)
-        self.asset_ref = AssetRef.attach(
-            asset=self.asset,
-            owner=self.hand,
-            role=AssetRole.HAND_PHOTO.value,
-        )
-        self.detection = HandDetection.objects.create(
-            hand=self.hand,
-            asset_ref=self.asset_ref,
+        self.detection = HandDetectionFactory(
             status=DetectionStatus.SUCCEEDED.value,
-            model_name='tile_detector',
-            model_version='v0.1.0',
         )
+        self.hand = self.detection.hand
 
     def test_creates_correction_with_tiles(self):
         tiles = [
@@ -73,18 +59,8 @@ class TestCreateHandCorrection(TestCase):
         self.assertEqual(self.hand.active_hand_correction_id, correction.id)
 
     def test_raises_mismatch_for_detection_from_other_hand(self):
-        other_hand = Hand.objects.create(client=self.client, source='camera')
-        other_asset_ref = AssetRef.attach(
-            asset=self.asset,
-            owner=other_hand,
-            role=AssetRole.HAND_PHOTO.value,
-        )
-        other_detection = HandDetection.objects.create(
-            hand=other_hand,
-            asset_ref=other_asset_ref,
+        other_detection = HandDetectionFactory(
             status=DetectionStatus.SUCCEEDED.value,
-            model_name='tile_detector',
-            model_version='v0.1.0',
         )
 
         tiles = [TileInput(tile_code='1B', sort_order=0)]
@@ -97,7 +73,6 @@ class TestCreateHandCorrection(TestCase):
             )
 
     def test_raises_invalid_tile_for_too_many_standard_tiles(self):
-        # 5 of the same tile exceeds the max of 4
         tiles = [TileInput(tile_code='1B', sort_order=i) for i in range(5)]
 
         with self.assertRaises(InvalidTileDataError) as ctx:
@@ -110,7 +85,6 @@ class TestCreateHandCorrection(TestCase):
         self.assertIn('5 times', ctx.exception.message)
 
     def test_raises_invalid_tile_for_duplicate_flower(self):
-        # Flowers are unique, max 1 of each
         tiles = [
             TileInput(tile_code='1F', sort_order=0),
             TileInput(tile_code='1F', sort_order=1),
@@ -137,7 +111,6 @@ class TestCreateHandCorrection(TestCase):
         self.assertIn('Invalid tile code', ctx.exception.message)
 
     def test_allows_max_standard_tiles(self):
-        # 4 of the same tile is allowed
         tiles = [TileInput(tile_code='1B', sort_order=i) for i in range(4)]
 
         correction = create_hand_correction(
@@ -173,5 +146,4 @@ class TestCreateHandCorrection(TestCase):
             tiles=tiles,
         )
 
-        # Should have tiles prefetched
         self.assertEqual(correction.tiles.count(), 2)

@@ -30,7 +30,7 @@ def healthz(_):
 urlpatterns = [
     path('', include(router.urls)),
     path('admin/', admin.site.urls),
-    path('healthz', healthz),
+    path('healthz/', healthz),
     path(
         'api-auth/',
         include('rest_framework.urls', namespace='rest_framework'),

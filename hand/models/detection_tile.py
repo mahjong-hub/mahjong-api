@@ -25,7 +25,7 @@ class DetectionTile(TimeStampedModel):
         related_name='tiles',
     )
 
-    tile_code = models.CharField(max_length=8, choices=TileCode.choices())
+    tile_code = models.CharField(max_length=8)
 
     # Bounding box coordinates (in pixels)
     x1 = models.IntegerField()
@@ -44,3 +44,9 @@ class DetectionTile(TimeStampedModel):
             models.Index(fields=['tile_code']),
         ]
         ordering = ['x1']  # Order by horizontal position
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(tile_code__in=[e.value for e in TileCode]),
+                name='hand_detectiontile_tile_code_valid',
+            ),
+        ]

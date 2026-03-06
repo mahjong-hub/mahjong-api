@@ -70,3 +70,10 @@ class DetectionHandMismatchError(BaseAPIException):
     code: str = 'detection_hand_mismatch'
     message: str = 'Detection does not belong to this hand.'
     status_code: int = 400
+
+
+@attr.s(auto_attribs=True, auto_exc=True)
+class ModalServiceError(BaseAPIException):
+    code: str = 'modal_service_error'
+    message: str = 'Modal inference service error.'
+    status_code: int = 502

@@ -36,9 +36,11 @@ class HandDetection(TimeStampedModel):
 
     status = models.CharField(
         max_length=32,
-        choices=DetectionStatus.choices(),
         default=DetectionStatus.PENDING.value,
     )
+
+    # Modal function call ID for async polling
+    call_id = models.CharField(max_length=128, blank=True, default='')
 
     # Model identification
     model_name = models.CharField(max_length=128, blank=True, default='')
@@ -64,3 +66,11 @@ class HandDetection(TimeStampedModel):
             models.Index(fields=['model_version', 'status']),
         ]
         ordering = ['-created_at']
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(
+                    status__in=[e.value for e in DetectionStatus],
+                ),
+                name='hand_handdetection_status_valid',
+            ),
+        ]

@@ -16,7 +16,7 @@ class TestAssetRefModel(TestCase):
         self.client = Client.objects.create(install_id='test-client-ref')
         self.hand = Hand.objects.create(client=self.client)
         self.asset = Asset.objects.create(
-            storage_provider=StorageProvider.S3.value,
+            storage_provider=StorageProvider.R2.value,
             storage_key='uploads/test/image.jpg',
             mime_type='image/jpeg',
             byte_size=12345,
@@ -67,7 +67,7 @@ class TestAssetRefModel(TestCase):
     def test_attach_uses_exif_captured_at_when_no_captured_at_provided(self):
         exif_time = timezone.now() - timedelta(days=1)
         asset_with_exif = Asset.objects.create(
-            storage_provider=StorageProvider.S3.value,
+            storage_provider=StorageProvider.R2.value,
             storage_key='uploads/test/exif.jpg',
             mime_type='image/jpeg',
             byte_size=12345,

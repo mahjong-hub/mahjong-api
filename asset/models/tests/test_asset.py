@@ -1,6 +1,7 @@
 import uuid
 from datetime import timedelta
 
+from django.db import IntegrityError
 from django.test import TestCase
 from django.utils import timezone
 
@@ -16,14 +17,14 @@ class TestAssetModel(TestCase):
 
     def test_create_asset_with_required_fields(self):
         asset = Asset.objects.create(
-            storage_provider=StorageProvider.S3.value,
+            storage_provider=StorageProvider.R2.value,
             storage_key='uploads/test/image.jpg',
             mime_type='image/jpeg',
             byte_size=12345,
         )
 
         self.assertIsInstance(asset.id, uuid.UUID)
-        self.assertEqual(asset.storage_provider, StorageProvider.S3.value)
+        self.assertEqual(asset.storage_provider, StorageProvider.R2.value)
         self.assertEqual(asset.storage_key, 'uploads/test/image.jpg')
         self.assertEqual(asset.mime_type, 'image/jpeg')
         self.assertEqual(asset.byte_size, 12345)
@@ -36,7 +37,7 @@ class TestAssetModel(TestCase):
     def test_create_asset_with_upload_session(self):
         asset = Asset.objects.create(
             upload_session=self.upload_session,
-            storage_provider=StorageProvider.S3.value,
+            storage_provider=StorageProvider.R2.value,
             storage_key='uploads/test/image.jpg',
             mime_type='image/jpeg',
             byte_size=12345,
@@ -50,7 +51,7 @@ class TestAssetModel(TestCase):
         exif_data = {'Make': 'Apple', 'Model': 'iPhone 15'}
 
         asset = Asset.objects.create(
-            storage_provider=StorageProvider.S3.value,
+            storage_provider=StorageProvider.R2.value,
             storage_key='uploads/test/image.jpg',
             mime_type='image/jpeg',
             byte_size=12345,
@@ -63,7 +64,7 @@ class TestAssetModel(TestCase):
 
     def test_asset_with_checksum(self):
         asset = Asset.objects.create(
-            storage_provider=StorageProvider.S3.value,
+            storage_provider=StorageProvider.R2.value,
             storage_key='uploads/test/image.jpg',
             mime_type='image/jpeg',
             byte_size=12345,
@@ -74,7 +75,7 @@ class TestAssetModel(TestCase):
 
     def test_asset_is_active_default_true(self):
         asset = Asset.objects.create(
-            storage_provider=StorageProvider.S3.value,
+            storage_provider=StorageProvider.R2.value,
             storage_key='uploads/test/image.jpg',
             mime_type='image/jpeg',
             byte_size=12345,
@@ -84,7 +85,7 @@ class TestAssetModel(TestCase):
 
     def test_asset_can_be_deactivated(self):
         asset = Asset.objects.create(
-            storage_provider=StorageProvider.S3.value,
+            storage_provider=StorageProvider.R2.value,
             storage_key='uploads/test/image.jpg',
             mime_type='image/jpeg',
             byte_size=12345,
@@ -99,7 +100,7 @@ class TestAssetModel(TestCase):
     def test_upload_session_set_null_on_delete(self):
         asset = Asset.objects.create(
             upload_session=self.upload_session,
-            storage_provider=StorageProvider.S3.value,
+            storage_provider=StorageProvider.R2.value,
             storage_key='uploads/test/image.jpg',
             mime_type='image/jpeg',
             byte_size=12345,
@@ -109,3 +110,12 @@ class TestAssetModel(TestCase):
 
         asset.refresh_from_db()
         self.assertIsNone(asset.upload_session)
+
+    def test_storage_provider_rejects_invalid_value(self):
+        with self.assertRaises(IntegrityError):
+            Asset.objects.create(
+                storage_provider='not_valid',
+                storage_key='uploads/test/image.jpg',
+                mime_type='image/jpeg',
+                byte_size=12345,
+            )

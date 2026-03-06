@@ -7,6 +7,7 @@ from botocore.exceptions import ClientError
 from asset.constants import DEFAULT_PRESIGNED_URL_EXPIRY
 from asset.exceptions import ModelDownloadError, S3Error
 from core.exceptions import catch_and_reraise
+from mahjong_api.settings import R2_ENDPOINT_URL
 
 
 @dataclass(frozen=True)
@@ -17,7 +18,11 @@ class S3ObjectMetadata:
 
 
 def get_s3_client():
-    return boto3.client('s3')
+    return boto3.client(
+        's3',
+        endpoint_url=R2_ENDPOINT_URL,
+        region_name='auto',
+    )
 
 
 def head_object(
@@ -61,6 +66,27 @@ def generate_presigned_put_url(
                 'Bucket': bucket_name,
                 'Key': object_name,
                 'ContentType': content_type,
+            },
+            ExpiresIn=expiration,
+        )
+
+
+def generate_presigned_get_url(
+    bucket_name: str,
+    object_name: str,
+    expiration: int = 900,
+) -> str:
+    s3_client = get_s3_client()
+    with catch_and_reraise(
+        ClientError,
+        S3Error,
+        'Failed to generate presigned GET URL',
+    ):
+        return s3_client.generate_presigned_url(
+            'get_object',
+            Params={
+                'Bucket': bucket_name,
+                'Key': object_name,
             },
             ExpiresIn=expiration,
         )

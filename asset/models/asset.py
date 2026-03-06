@@ -1,6 +1,7 @@
 import uuid
 from django.db import models
 from core.models import TimeStampedModel
+from asset.constants import StorageProvider
 
 
 class Asset(TimeStampedModel):
@@ -16,7 +17,7 @@ class Asset(TimeStampedModel):
 
     is_active = models.BooleanField(default=True)
 
-    storage_provider = models.CharField(max_length=32)  # ideally choices=
+    storage_provider = models.CharField(max_length=32)
     storage_key = models.CharField(max_length=512)
 
     mime_type = models.CharField(max_length=127)
@@ -35,4 +36,12 @@ class Asset(TimeStampedModel):
             models.Index(fields=['created_at']),
             models.Index(fields=['exif_captured_at']),
             models.Index(fields=['is_active']),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(
+                    storage_provider__in=[e.value for e in StorageProvider],
+                ),
+                name='asset_asset_storage_provider_valid',
+            ),
         ]

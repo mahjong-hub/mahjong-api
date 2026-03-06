@@ -79,7 +79,7 @@ def create_presigned_upload(
         content_type,
         purpose,
     )
-    bucket_name = settings.AWS_STORAGE_BUCKET_NAME
+    bucket_name = settings.STORAGE_BUCKET_IMAGES
 
     presigned_url = generate_presigned_put_url(
         bucket_name=bucket_name,
@@ -97,7 +97,7 @@ def create_presigned_upload(
         asset = Asset.objects.create(
             id=asset_id,
             upload_session=upload_session,
-            storage_provider=StorageProvider.S3.value,
+            storage_provider=StorageProvider.R2.value,
             storage_key=storage_key,
             mime_type=content_type,
             byte_size=0,
@@ -148,7 +148,7 @@ def complete_upload(
         )
 
     metadata = head_object(
-        bucket_name=settings.AWS_STORAGE_BUCKET_NAME,
+        bucket_name=settings.STORAGE_BUCKET_IMAGES,
         object_name=asset.storage_key,
     )
 
