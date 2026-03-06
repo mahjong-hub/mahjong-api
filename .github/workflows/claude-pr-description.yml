@@ -1,0 +1,37 @@
+name: Claude PR Description
+
+on:
+  pull_request:
+    types: [opened]
+
+jobs:
+  claude-pr-description:
+    if: github.event.pull_request.body == '' || github.event.pull_request.body == null
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Write PR Description
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            Look at the diff for PR #${{ github.event.pull_request.number }} in this repo using `gh pr diff ${{ github.event.pull_request.number }}`.
+            Then write a concise PR description and update it using `gh pr edit ${{ github.event.pull_request.number }} --body "..."`.
+
+            The description should follow this format:
+            ## Summary
+            - Bullet points covering what changed and why
+
+            ## Test plan
+            - Bullet points for how to verify the changes
+
+            Keep it brief and factual. Do not add emojis. Only call `gh pr edit` once with the final body.
