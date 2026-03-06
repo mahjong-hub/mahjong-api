@@ -9,7 +9,7 @@ shell = "python manage.py shell"
 migrate = "python manage.py migrate"
 makemigrations = "python manage.py makemigrations"
 collectstatic = "python manage.py collectstatic --noinput"
-test = "DJANGO_ENV=test python manage.py test"
+test = "env DJANGO_ENV=test python manage.py test"
 new-app = "python manage.py startapp"
 
 [packages]
@@ -33,6 +33,7 @@ factory-boy = "*"
 testcontainers = "*"
 django-storages = {extras = ["s3"], version = "*"}
 httpx = "*"
+django-localized-fields = "*"
 
 [dev-packages]
 ruff = "*"

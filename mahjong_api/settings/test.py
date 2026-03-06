@@ -26,7 +26,7 @@ atexit.register(_postgres.stop)
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
+        'ENGINE': 'psqlextra.backend',
         'NAME': _postgres.dbname,
         'USER': _postgres.username,
         'PASSWORD': _postgres.password,
