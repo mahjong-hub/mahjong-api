@@ -25,6 +25,7 @@ jobs:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ github.token }}
           track_progress: true
+          claude_args: '--allowedTools "Bash(gh api*),Bash(gh pr*),Bash(git*)"'
           prompt: |
             Look at the diff for PR #${{ github.event.pull_request.number }} in this repo using `gh pr diff ${{ github.event.pull_request.number }}`.
             Then write a concise PR description and update it using `gh pr edit ${{ github.event.pull_request.number }} --body "..."`.
