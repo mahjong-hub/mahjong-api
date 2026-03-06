@@ -5,8 +5,15 @@ import factory
 from asset.constants import AssetRole
 from asset.factories import AssetFactory, UploadSessionFactory
 from asset.models import AssetRef
-from hand.constants import DetectionStatus, HandSource
-from hand.models import DetectionTile, Hand, HandDetection
+from hand.constants import DetectionStatus, HandSource, Wind
+from hand.models import (
+    DetectionTile,
+    Hand,
+    HandContext,
+    HandDetection,
+    HandWinModifier,
+)
+from rule.constants import ConditionContext
 from user.factories import ClientFactory
 
 
@@ -44,6 +51,24 @@ class HandDetectionFactory(factory.django.DjangoModelFactory):
     status = DetectionStatus.PENDING.value
     model_name = 'tile_detector'
     model_version = 'v0'
+
+
+class HandContextFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = HandContext
+
+    hand = factory.SubFactory(HandFactory)
+    seat_wind = Wind.EAST.value
+    round_wind = Wind.EAST.value
+    win_method = None
+
+
+class HandWinModifierFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = HandWinModifier
+
+    hand_context = factory.SubFactory(HandContextFactory)
+    modifier = ConditionContext.LAST_TILE.value
 
 
 class DetectionTileFactory(factory.django.DjangoModelFactory):

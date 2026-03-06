@@ -102,3 +102,15 @@ class ConditionContext(Enum):
     @classmethod
     def choices(cls):
         return [(item.value, item.name) for item in cls]
+
+    @classmethod
+    def win_modifier_values(cls):
+        return [
+            cls.ROB_KONG.value,
+            cls.REPLACEMENT.value,
+            cls.DOUBLE_REPLACEMENT.value,
+            cls.LAST_TILE.value,
+            cls.LAST_DISCARD.value,
+            cls.HEAVENLY.value,
+            cls.EARTHLY.value,
+        ]
