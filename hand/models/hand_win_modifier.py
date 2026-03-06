@@ -2,8 +2,8 @@ import uuid
 
 from django.db import models
 
+from hand.constants import WinModifier
 from hand.models.hand_context import HandContext
-from rule.constants import ConditionContext
 
 
 class HandWinModifier(models.Model):
@@ -28,7 +28,7 @@ class HandWinModifier(models.Model):
         constraints = [
             models.CheckConstraint(
                 condition=models.Q(
-                    modifier__in=ConditionContext.win_modifier_values(),
+                    modifier__in=[e.value for e in WinModifier],
                 ),
                 name='hand_handwinmodifier_modifier_valid',
             ),

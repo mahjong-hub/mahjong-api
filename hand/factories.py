@@ -5,7 +5,7 @@ import factory
 from asset.constants import AssetRole
 from asset.factories import AssetFactory, UploadSessionFactory
 from asset.models import AssetRef
-from hand.constants import DetectionStatus, HandSource, Wind
+from hand.constants import DetectionStatus, HandSource, Wind, WinModifier
 from hand.models import (
     DetectionTile,
     Hand,
@@ -13,7 +13,6 @@ from hand.models import (
     HandDetection,
     HandWinModifier,
 )
-from rule.constants import ConditionContext
 from user.factories import ClientFactory
 
 
@@ -68,7 +67,7 @@ class HandWinModifierFactory(factory.django.DjangoModelFactory):
         model = HandWinModifier
 
     hand_context = factory.SubFactory(HandContextFactory)
-    modifier = ConditionContext.LAST_TILE.value
+    modifier = WinModifier.LAST_TILE.value
 
 
 class DetectionTileFactory(factory.django.DjangoModelFactory):

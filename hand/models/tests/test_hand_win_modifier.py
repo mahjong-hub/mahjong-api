@@ -3,14 +3,14 @@ from django.test import TestCase
 
 from hand.factories import HandContextFactory, HandWinModifierFactory
 from hand.models import HandContext, HandWinModifier
-from rule.constants import ConditionContext
+from hand.constants import WinModifier
 
 
 class TestHandWinModifierModel(TestCase):
     def test_create_with_defaults(self):
         mod = HandWinModifierFactory()
         self.assertIsNotNone(mod.id)
-        self.assertEqual(mod.modifier, ConditionContext.LAST_TILE.value)
+        self.assertEqual(mod.modifier, WinModifier.LAST_TILE.value)
 
     def test_modifier_rejects_invalid(self):
         with self.assertRaises(IntegrityError):
@@ -20,12 +20,12 @@ class TestHandWinModifierModel(TestCase):
         ctx = HandContextFactory()
         HandWinModifierFactory(
             hand_context=ctx,
-            modifier=ConditionContext.LAST_TILE.value,
+            modifier=WinModifier.LAST_TILE.value,
         )
         with self.assertRaises(IntegrityError):
             HandWinModifierFactory(
                 hand_context=ctx,
-                modifier=ConditionContext.LAST_TILE.value,
+                modifier=WinModifier.LAST_TILE.value,
             )
 
     def test_same_modifier_different_contexts_allowed(self):
@@ -33,11 +33,11 @@ class TestHandWinModifierModel(TestCase):
         ctx2 = HandContextFactory()
         mod1 = HandWinModifierFactory(
             hand_context=ctx1,
-            modifier=ConditionContext.LAST_TILE.value,
+            modifier=WinModifier.LAST_TILE.value,
         )
         mod2 = HandWinModifierFactory(
             hand_context=ctx2,
-            modifier=ConditionContext.LAST_TILE.value,
+            modifier=WinModifier.LAST_TILE.value,
         )
         self.assertNotEqual(mod1.id, mod2.id)
 
