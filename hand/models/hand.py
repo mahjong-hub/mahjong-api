@@ -18,7 +18,6 @@ class Hand(TimeStampedModel):
 
     source = models.CharField(
         max_length=32,
-        choices=HandSource.choices(),
         default=HandSource.CAMERA.value,
     )
 
@@ -36,4 +35,10 @@ class Hand(TimeStampedModel):
         indexes = [
             models.Index(fields=['client', 'created_at']),
             models.Index(fields=['created_at']),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(source__in=[e.value for e in HandSource]),
+                name='hand_hand_source_valid',
+            ),
         ]

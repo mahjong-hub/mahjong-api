@@ -1,0 +1,263 @@
+---
+config:
+  layout: elk
+  theme: redux-color
+---
+erDiagram
+	direction TB
+	Client {
+		text install_id PK ""
+		text label  ""
+		timestamptz created_at  ""
+		timestamptz last_seen_at  ""
+	}
+
+	Hand {
+		uuid id PK ""
+		text client_id FK ""
+		text source  "camera/manual/import"
+		uuid active_hand_correction_id FK "nullable;latest verified snapshot"
+		timestamptz created_at  ""
+		timestamptz updated_at  ""
+	}
+
+	Match {
+		uuid id PK ""
+		text client_id FK ""
+		uuid ruleset_version_id FK ""
+		text name  "nullable"
+		timestamptz started_at  ""
+		timestamptz ended_at  "nullable"
+		timestamptz created_at  ""
+	}
+
+	UploadSession {
+		uuid id PK ""
+		text client_id FK ""
+		text status  "created/presigned/complete/failed"
+		text purpose  ""
+		timestamptz created_at  ""
+		timestamptz updated_at  ""
+	}
+
+	RulesetScoringConfig {
+		uuid id PK ""
+		uuid ruleset_version_id FK "1:1"
+		text method  "hk_additive/riichi_han_fu/taiwan_tai/custom"
+		text primary_unit  "faan/han/tai/points"
+		text secondary_unit  "fu/none"
+		int min_primary_unit  "nullable"
+	}
+
+	RulesetItem {
+		uuid id PK ""
+		uuid ruleset_version_id FK ""
+		uuid rule_definition_id FK ""
+		int value_int  ""
+		text value_unit  "faan/han/tai/points"
+		bool enabled  ""
+	}
+
+	RuleDefinition {
+		uuid id PK ""
+		text code  "unique; e.g. ALL_PUNGS"
+		text label  "LocalizedCharField"
+		text kind  "pattern/bonus/limit/special/dora_like"
+		text description  "LocalizedTextField"
+		timestamptz created_at  ""
+		timestamptz updated_at  ""
+	}
+
+	RuleLogic {
+		uuid id PK ""
+		uuid rule_definition_id FK "1:1"
+		text combine_op  "and/or/blank"
+	}
+
+	MatchParticipant {
+		uuid id PK ""
+		uuid match_id FK ""
+		text display_name  ""
+		int seat_index  "nullable"
+		timestamptz created_at  ""
+	}
+
+	MatchRound {
+		uuid id PK ""
+		uuid match_id FK ""
+		int round_index  ""
+		text round_wind  "E/S/W/N; nullable"
+		timestamptz started_at  ""
+		timestamptz ended_at  "nullable"
+		timestamptz created_at  ""
+	}
+
+	HandContext {
+		uuid id PK ""
+		uuid hand_id FK "1:1"
+		text seat_wind  "E/S/W/N"
+		text round_wind  "E/S/W/N"
+		text win_source  "self_draw/discard/unknown;nullable"
+		bool is_open_hand  "nullable"
+		timestamptz created_at  ""
+		timestamptz updated_at  ""
+	}
+
+	Asset {
+		uuid id PK ""
+		uuid upload_session_id FK "nullable"
+		bool is_active  ""
+		text storage_provider  "local/s3/r2/gcs"
+		text storage_key  ""
+		text mime_type  ""
+		bigint byte_size  ""
+		text checksum  "nullable"
+		json exif_data  "nullable"
+		timestamptz exif_captured_at  "nullable"
+		timestamptz created_at  ""
+		timestamptz updated_at  ""
+	}
+
+	AssetRef {
+		uuid id PK ""
+		uuid asset_id FK ""
+		int owner_content_type_id FK "ContentType(GenericFK)"
+		uuid owner_id  "Polymorphic owner PK"
+		text role  ""
+		int ordering  ""
+		timestamptz captured_at  "nullable"
+		timestamptz created_at  ""
+		timestamptz updated_at  ""
+	}
+
+	HandDetection {
+		uuid id PK ""
+		uuid hand_id FK ""
+		uuid asset_ref_id FK ""
+		text status  "pending/running/succeeded/failed"
+		text call_id  "Modal async call ID"
+		text model_name  ""
+		text model_version  ""
+		numeric confidence_overall  "nullable"
+		text error_code  ""
+		text error_message  ""
+		timestamptz created_at  ""
+		timestamptz updated_at  ""
+	}
+
+	HandCorrection {
+		uuid id PK ""
+		uuid hand_id FK ""
+		uuid detection_id FK "nullable; source detection"
+		timestamptz created_at  ""
+		timestamptz updated_at  ""
+	}
+
+	HandScore {
+		uuid id PK ""
+		uuid hand_id FK ""
+		uuid ruleset_version_id FK ""
+		int total_primary_units  ""
+		int total_secondary_units  "nullable"
+		int total_points  "nullable"
+		timestamptz created_at  ""
+	}
+
+	DetectionTile {
+		uuid id PK ""
+		uuid detection_id FK ""
+		text tile_code  "e.g. 1W, RD, EW"
+		int x1  ""
+		int y1  ""
+		int x2  ""
+		int y2  ""
+		numeric confidence  ""
+		timestamptz created_at  ""
+		timestamptz updated_at  ""
+	}
+
+	HandScoreItem {
+		uuid id PK ""
+		uuid hand_score_id FK ""
+		uuid rule_definition_id FK ""
+		int value_int  ""
+		text value_unit  ""
+		text note  "nullable"
+	}
+
+	HandTile {
+		uuid id PK ""
+		uuid hand_correction_id FK ""
+		text tile_code  "e.g. 1W, RD, EW"
+		int sort_order  "left-to-right display order"
+		timestamptz created_at  ""
+		timestamptz updated_at  ""
+	}
+
+	RuleExclusion {
+		uuid id PK ""
+		uuid ruleset_version_id FK ""
+		uuid rule_id FK "RuleDefinition"
+		uuid excludes_id FK "RuleDefinition"
+	}
+
+	RuleCondition {
+		uuid id PK ""
+		uuid rule_logic_id FK ""
+		text type  "hand/chow/pung/kong/pair/tile/suit/win"
+		text operator  "at_least/at_most/exactly/is/none"
+		int value  "nullable threshold"
+		text target  "nullable;honor/dragon/terminal/etc."
+		text context  "nullable;concealed/self_draw/seat_wind/etc."
+	}
+
+	RulesetVersion {
+		uuid id PK ""
+		uuid ruleset_id FK ""
+		int version_int  ""
+		text status  "draft/active/deprecated"
+		timestamptz created_at  ""
+	}
+
+	Ruleset {
+		uuid id PK ""
+		text client_id FK "nullable for built-ins"
+		text name  ""
+		text country_code  "e.g. AUS, HKG"
+		text visibility  "internal/public"
+		text source  "built_in/seeded/user_created"
+		timestamptz created_at  ""
+	}
+
+	Client||--o{UploadSession:"starts"
+	Client||--o{Hand:"creates"
+	UploadSession||--o{Asset:"creates"
+	Asset||--o{AssetRef:"referenced_by"
+	Hand||--o{AssetRef:"has"
+	Hand||--o{HandDetection:"produces"
+	Hand||--o{HandCorrection:"finalised_by"
+	Hand}o--o|HandCorrection:"active_correction"
+	AssetRef||--o{HandDetection:"input_for"
+	HandDetection||--o{DetectionTile:"contains"
+	HandDetection||--o{HandCorrection:"sourced_by"
+	HandCorrection||--o{HandTile:"contains"
+	RuleDefinition||--||RuleLogic:"has"
+	RuleLogic||--o{RuleCondition:"composed_of"
+	RuleDefinition||--o{RuleExclusion:"rule"
+	RuleDefinition||--o{RuleExclusion:"excludes"
+	Client||--o{Ruleset:"owns"
+	Ruleset||--o{RulesetVersion:"versioned_as"
+	RulesetVersion||--||RulesetScoringConfig:"configures"
+	RulesetVersion||--o{RulesetItem:"defines"
+	RulesetVersion||--o{RuleExclusion:"defines"
+	RulesetItem}o--||RuleDefinition:"uses"
+	Client||--o{Match:"creates"
+	Match||--o{MatchParticipant:"has"
+	Match||--o{MatchRound:"has"
+	MatchRound||--o{Hand:"contains"
+	Hand||--||HandContext:"has_context"
+	Hand||--o{HandScore:"results_in"
+	HandScore||--o{HandScoreItem:"breakdown"
+	HandScoreItem}o--||RuleDefinition:"matched_rule"
+	RulesetVersion||--o{Hand:"pinned_to"
+	Ruleset||--o{Hand:"used_by"
