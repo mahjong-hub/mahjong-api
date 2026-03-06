@@ -125,7 +125,7 @@ projects:
             value: "True"
 
           - key: DJANGO_ALLOWED_HOSTS
-            value: localhost,api.dev.mahjongcalc.com,mahjong-api-dev.onrender.com
+            value: localhost,api.dev.mahjongcalc.com,.onrender.com
 
           - key: DJANGO_CSRF_TRUSTED_ORIGINS
             sync: false

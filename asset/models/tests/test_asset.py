@@ -1,6 +1,7 @@
 import uuid
 from datetime import timedelta
 
+from django.db import IntegrityError
 from django.test import TestCase
 from django.utils import timezone
 
@@ -109,3 +110,12 @@ class TestAssetModel(TestCase):
 
         asset.refresh_from_db()
         self.assertIsNone(asset.upload_session)
+
+    def test_storage_provider_rejects_invalid_value(self):
+        with self.assertRaises(IntegrityError):
+            Asset.objects.create(
+                storage_provider='not_valid',
+                storage_key='uploads/test/image.jpg',
+                mime_type='image/jpeg',
+                byte_size=12345,
+            )

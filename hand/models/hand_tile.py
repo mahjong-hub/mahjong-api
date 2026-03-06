@@ -23,10 +23,7 @@ class HandTile(TimeStampedModel):
         related_name='tiles',
     )
 
-    tile_code = models.CharField(
-        max_length=4,
-        choices=TileCode.choices(),
-    )
+    tile_code = models.CharField(max_length=4)
 
     # Stable ordering for UI display (left-to-right)
     sort_order = models.PositiveIntegerField(default=0)
@@ -36,3 +33,9 @@ class HandTile(TimeStampedModel):
             models.Index(fields=['hand_correction', 'sort_order']),
         ]
         ordering = ['sort_order']
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(tile_code__in=[e.value for e in TileCode]),
+                name='hand_handtile_tile_code_valid',
+            ),
+        ]
