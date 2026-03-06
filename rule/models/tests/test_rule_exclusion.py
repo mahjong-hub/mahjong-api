@@ -3,7 +3,11 @@ import uuid
 from django.db import IntegrityError
 from django.test import TestCase
 
-from rule.factories import RuleDefinitionFactory, RuleExclusionFactory
+from rule.factories import (
+    RuleDefinitionFactory,
+    RuleExclusionFactory,
+    RulesetVersionFactory,
+)
 from rule.models import RuleExclusion
 
 
@@ -12,6 +16,7 @@ class TestRuleExclusionModel(TestCase):
         exclusion = RuleExclusionFactory()
 
         self.assertIsInstance(exclusion.id, uuid.UUID)
+        self.assertIsNotNone(exclusion.ruleset_version)
         self.assertIsNotNone(exclusion.rule)
         self.assertIsNotNone(exclusion.excludes)
 
@@ -47,6 +52,23 @@ class TestRuleExclusionModel(TestCase):
             RuleExclusion.objects.filter(pk=exclusion_id).exists(),
         )
 
+    def test_cascade_delete_with_ruleset_version(self):
+        version = RulesetVersionFactory()
+        rule_a = RuleDefinitionFactory()
+        rule_b = RuleDefinitionFactory()
+        exclusion = RuleExclusionFactory(
+            ruleset_version=version,
+            rule=rule_a,
+            excludes=rule_b,
+        )
+        exclusion_id = exclusion.id
+
+        version.delete()
+
+        self.assertFalse(
+            RuleExclusion.objects.filter(pk=exclusion_id).exists(),
+        )
+
     def test_reverse_relations(self):
         rule_a = RuleDefinitionFactory()
         rule_b = RuleDefinitionFactory()
@@ -54,3 +76,15 @@ class TestRuleExclusionModel(TestCase):
 
         self.assertIn(exclusion, rule_a.exclusions.all())
         self.assertIn(exclusion, rule_b.excluded_by.all())
+
+    def test_reverse_relation_on_ruleset_version(self):
+        version = RulesetVersionFactory()
+        rule_a = RuleDefinitionFactory()
+        rule_b = RuleDefinitionFactory()
+        exclusion = RuleExclusionFactory(
+            ruleset_version=version,
+            rule=rule_a,
+            excludes=rule_b,
+        )
+
+        self.assertIn(exclusion, version.exclusions.all())
