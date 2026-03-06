@@ -1,6 +1,19 @@
 from enum import Enum
 
 
+class RulesetVersionStatus(Enum):
+    DRAFT = 'draft'
+    ACTIVE = 'active'
+    DEPRECATED = 'deprecated'
+
+
+class ScoringUnit(Enum):
+    FAAN = 'faan'
+    HAN = 'han'
+    TAI = 'tai'
+    POINTS = 'points'
+
+
 class RuleKind(Enum):
     PATTERN = 'pattern'
     BONUS = 'bonus'
