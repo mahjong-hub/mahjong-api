@@ -138,6 +138,11 @@ Tests use Factory Boy for test data. Factories are in `<app>/factories.py`:
 
 Use `@override_settings` decorator to mock settings in tests.
 
+### Model field conventions
+
+- **Do not use `choices=` on CharField.** Validation happens at the serializer layer; DB enforcement comes from `CheckConstraint`. Using `choices=` would duplicate valid values already defined in the enum.
+- Use enums + `CheckConstraint` as the single source of truth for valid field values (e.g. `condition=models.Q(field__in=[e.value for e in MyEnum])`).
+
 ## Code Style
 
 Configured in `pyproject.toml` using ruff:

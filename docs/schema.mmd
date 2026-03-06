@@ -93,14 +93,18 @@ erDiagram
 	}
 
 	HandContext {
-		uuid id PK ""
-		uuid hand_id FK "1:1"
+		uuid hand_id PK "1:1"
 		text seat_wind  "E/S/W/N"
 		text round_wind  "E/S/W/N"
-		text win_source  "self_draw/discard/unknown;nullable"
-		bool is_open_hand  "nullable"
+		text win_method "self_draw/discard; nullable"
 		timestamptz created_at  ""
 		timestamptz updated_at  ""
+	}
+
+	HandWinModifier {
+		uuid id PK ""
+		uuid hand_context_id FK ""
+		text modifier "rob_kong/replacement/double_replacement/etc."
 	}
 
 	Asset {
@@ -257,6 +261,7 @@ erDiagram
 	MatchRound||--o{Hand:"contains"
 	Hand||--||HandContext:"has_context"
 	Hand||--o{HandScore:"results_in"
+	HandContext||--o{HandWinModifier:"has"
 	HandScore||--o{HandScoreItem:"breakdown"
 	HandScoreItem}o--||RuleDefinition:"matched_rule"
 	RulesetVersion||--o{Hand:"pinned_to"
