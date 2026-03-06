@@ -6,7 +6,7 @@ on:
 
 jobs:
   claude-pr-description:
-    if: github.event.pull_request.body == '' || github.event.pull_request.body == null
+    if: github.event.pull_request.body == '' || github.event.pull_request.body == null || contains(github.event.pull_request.body, '<!-- claude-pr-description -->')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -23,15 +23,36 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ github.token }}
+          claude_args: "--allowedTools Bash"
           prompt: |
-            Look at the diff for PR #${{ github.event.pull_request.number }} in this repo using `gh pr diff ${{ github.event.pull_request.number }}`.
-            Then write a concise PR description and update it using `gh pr edit ${{ github.event.pull_request.number }} --body "..."`.
+            You are updating the description for PR #${{ github.event.pull_request.number }}.
 
-            The description should follow this format:
-            ## Summary
-            - Bullet points covering what changed and why
+            Steps:
+            1. Get the current PR description: `gh pr view ${{ github.event.pull_request.number }} --json body -q .body`
+            2. Get the current diff: `gh pr diff ${{ github.event.pull_request.number }}`
+            3. Update the description based on the diff and save it with `gh pr edit ${{ github.event.pull_request.number }} --body "..."`.
+
+            The description must follow this format exactly:
+
+            ## What
+            One or two sentences describing what this PR does.
+
+            ## Why
+            One or two sentences on the motivation or context (link the issue if obvious from the diff, e.g. "Closes #N").
+            If the motivation is not clear from the diff alone, use '[Needed more context, please fill in why]' as a placeholder.
+
+            ## Changes
+            - Concise bullet points grouped by area (models, migrations, tests, config, etc.)
+            - Focus on *what* changed, not the file names
 
             ## Test plan
-            - Bullet points for how to verify the changes
+            - Bullet points for how to verify the changes work correctly
 
-            Keep it brief and factual. Do not add emojis. Only call `gh pr edit` once with the final body.
+            Rules:
+            - If the current description already exists, preserve any author edits (especially the ## Why section if it no longer contains the placeholder).
+            - Only update ## What, ## Changes, and ## Test plan based on the latest diff.
+            - Be concise and factual. No filler phrases like "This PR introduces...".
+            - Do not add emojis.
+            - Only call `gh pr edit` once with the final body.
+            - Always include the HTML comment `<!-- claude-pr-description -->` at the very end of the body so future pushes re-trigger this workflow.
