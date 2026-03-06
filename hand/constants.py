@@ -13,6 +13,8 @@ class Wind(Enum):
 
 
 class WinMethod(Enum):
+    """How the winning tile was acquired."""
+
     SELF_DRAW = 'self_draw'
     DISCARD = 'discard'
 
@@ -22,6 +24,12 @@ class WinMethod(Enum):
 
 
 class WinModifier(Enum):
+    """Special circumstances that apply to a winning hand.
+
+    These modify scoring and are stored as individual rows on HandWinModifier
+    so that multiple modifiers can apply to a single hand simultaneously.
+    """
+
     ROB_KONG = 'rob_kong'
     REPLACEMENT = 'replacement'
     DOUBLE_REPLACEMENT = 'double_replacement'
