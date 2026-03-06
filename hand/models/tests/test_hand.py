@@ -1,5 +1,6 @@
 import uuid
 
+from django.db import IntegrityError
 from django.test import TestCase
 
 from hand.constants import HandSource
@@ -58,3 +59,7 @@ class TestHandModel(TestCase):
 
         fetched = Hand.objects.get(pk=hand.id)
         self.assertEqual(fetched.id, hand.id)
+
+    def test_source_rejects_invalid_value(self):
+        with self.assertRaises(IntegrityError):
+            Hand.objects.create(client=self.client_obj, source='not_valid')
