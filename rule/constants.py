@@ -106,6 +106,7 @@ class ConditionContext(Enum):
     @classmethod
     def win_modifier_values(cls):
         return [
+            cls.CONCEALED.value,
             cls.ROB_KONG.value,
             cls.REPLACEMENT.value,
             cls.DOUBLE_REPLACEMENT.value,
