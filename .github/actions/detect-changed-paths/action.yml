@@ -1,0 +1,71 @@
+name: Detect Changed Paths
+description: >
+  Outputs `changed=true` if any relevant file changed between the base and head
+  commits. Supports two mutually exclusive modes:
+    - ignore-paths: changed=true when any file does NOT start with an ignored prefix
+    - include-paths: changed=true when any file starts with an included prefix
+
+inputs:
+  base-sha:
+    description: Base commit SHA to diff against.
+    required: true
+  ignore-paths:
+    description: |
+      Newline-separated path prefixes to exclude.
+      changed=true if any changed file does NOT start with any of these.
+    required: false
+    default: ''
+  include-paths:
+    description: |
+      Newline-separated path prefixes to include.
+      changed=true if any changed file starts with any of these.
+    required: false
+    default: ''
+
+outputs:
+  changed:
+    description: "'true' if relevant files changed, 'false' otherwise."
+    value: ${{ steps.check.outputs.changed }}
+
+runs:
+  using: composite
+  steps:
+    - name: Check changed paths
+      id: check
+      shell: bash
+      run: |
+        CHANGED=$(git diff --name-only "${{ inputs.base-sha }}...HEAD")
+        RESULT=false
+
+        if [[ -n "${{ inputs.include-paths }}" ]]; then
+          # Include mode: changed=true if any file matches an include prefix
+          while IFS= read -r file; do
+            [[ -z "$file" ]] && continue
+            while IFS= read -r pattern; do
+              [[ -z "$pattern" ]] && continue
+              if [[ "$file" == ${pattern}* ]]; then
+                RESULT=true
+                break 2
+              fi
+            done <<< "${{ inputs.include-paths }}"
+          done <<< "$CHANGED"
+        else
+          # Ignore mode: changed=true if any file does NOT match an ignore prefix
+          while IFS= read -r file; do
+            [[ -z "$file" ]] && continue
+            IGNORED=false
+            while IFS= read -r pattern; do
+              [[ -z "$pattern" ]] && continue
+              if [[ "$file" == ${pattern}* ]]; then
+                IGNORED=true
+                break
+              fi
+            done <<< "${{ inputs.ignore-paths }}"
+            if [[ "$IGNORED" == false ]]; then
+              RESULT=true
+              break
+            fi
+          done <<< "$CHANGED"
+        fi
+
+        echo "changed=$RESULT" >> "$GITHUB_OUTPUT"
