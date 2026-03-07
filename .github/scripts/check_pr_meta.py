@@ -90,11 +90,12 @@ def main() -> int:
     # Success: professional summary with table
     assignee_list = ', '.join(a['login'] for a in assignees) or '—'
     label_list = ', '.join(label['name'] for label in labels) or '—'
+    safe_title = title.replace('|', r'\|')
 
     summary_table = (
         '| Field     | Value |\n'
         '|-----------|-------|\n'
-        f'| Title     | `{title}` |\n'
+        f'| Title     | `{safe_title}` |\n'
         f'| Assignees | {assignee_list} |\n'
         f'| Labels    | {label_list} |\n'
     )
