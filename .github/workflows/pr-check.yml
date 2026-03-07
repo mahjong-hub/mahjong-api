@@ -19,6 +19,8 @@ concurrency:
 jobs:
   detect_paths:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       django_changed: ${{ steps.detect.outputs.changed }}
     steps:
