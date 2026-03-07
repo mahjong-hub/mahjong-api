@@ -16,6 +16,8 @@ concurrency:
   group: pr-check-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
+permissions: {}
+
 jobs:
   detect_paths:
     runs-on: ubuntu-latest
@@ -24,7 +26,7 @@ jobs:
     outputs:
       django_changed: ${{ steps.detect.outputs.changed }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
