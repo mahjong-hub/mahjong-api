@@ -54,26 +54,6 @@ class TestRuleDefinitionModel(TestCase):
         self.assertEqual(rule.label['zh-hk'], '斷么九')
         self.assertEqual(rule.label['zh-cn'], '断幺九')
 
-    def test_description_is_localised(self):
-        rule = RuleDefinitionFactory(
-            code='riichi',
-            description={
-                'en': 'Declare ready',
-                'zh-hk': '立直',
-                'zh-cn': '立直',
-            },
-        )
-
-        rule.refresh_from_db()
-        self.assertEqual(rule.description.en, 'Declare ready')
-        self.assertEqual(rule.description['zh-hk'], '立直')
-
-    def test_description_can_be_blank(self):
-        rule = RuleDefinitionFactory(description={})
-
-        rule.refresh_from_db()
-        self.assertIsNotNone(rule.description)
-
     def test_default_ordering_by_code(self):
         RuleDefinitionFactory(code='tanyao')
         RuleDefinitionFactory(code='pinfu')

@@ -30,7 +30,6 @@ class RuleDefinitionFactory(factory.django.DjangoModelFactory):
         lambda o: {'en': o.code, 'zh-hk': o.code, 'zh-cn': o.code},
     )
     kind = RuleKind.PATTERN.value
-    description = {}
 
 
 class RuleLogicFactory(factory.django.DjangoModelFactory):
