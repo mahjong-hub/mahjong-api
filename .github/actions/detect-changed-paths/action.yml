@@ -33,11 +33,15 @@ runs:
     - name: Check changed paths
       id: check
       shell: bash
+      env:
+        INCLUDE_PATHS: ${{ inputs.include-paths }}
+        IGNORE_PATHS: ${{ inputs.ignore-paths }}
+        BASE_SHA: ${{ inputs.base-sha }}
       run: |
-        CHANGED=$(git diff --name-only "${{ inputs.base-sha }}...HEAD")
+        CHANGED=$(git diff --name-only "$BASE_SHA...HEAD")
         RESULT=false
 
-        if [[ -n "${{ inputs.include-paths }}" ]]; then
+        if [[ -n "$INCLUDE_PATHS" ]]; then
           # Include mode: changed=true if any file matches an include prefix
           while IFS= read -r file; do
             [[ -z "$file" ]] && continue
@@ -47,7 +51,7 @@ runs:
                 RESULT=true
                 break 2
               fi
-            done <<< "${{ inputs.include-paths }}"
+            done <<< "$INCLUDE_PATHS"
           done <<< "$CHANGED"
         else
           # Ignore mode: changed=true if any file does NOT match an ignore prefix
@@ -60,7 +64,7 @@ runs:
                 IGNORED=true
                 break
               fi
-            done <<< "${{ inputs.ignore-paths }}"
+            done <<< "$IGNORE_PATHS"
             if [[ "$IGNORED" == false ]]; then
               RESULT=true
               break
