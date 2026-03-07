@@ -1,5 +1,6 @@
 import json
 import os
+import urllib.error
 import urllib.request
 
 
@@ -20,8 +21,14 @@ def github_api(url: str, method: str = 'GET', data=None):
     if data is not None:
         req.data = json.dumps(data).encode('utf-8')
 
-    with urllib.request.urlopen(req) as resp:
-        return json.load(resp)
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            return json.load(resp)
+    except urllib.error.HTTPError as e:
+        body = e.read().decode('utf-8', errors='replace')
+        raise RuntimeError(
+            f'GitHub API error {e.code} for {url}: {body}',
+        ) from e
 
 
 def update_pr_comment(
