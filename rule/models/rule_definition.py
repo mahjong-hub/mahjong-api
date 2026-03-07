@@ -1,7 +1,7 @@
 import uuid
 
 from django.db import models
-from localized_fields.fields import LocalizedCharField, LocalizedTextField
+from localized_fields.fields import LocalizedCharField
 
 from core.models import TimeStampedModel
 from rule.constants import RuleKind
@@ -12,7 +12,6 @@ class RuleDefinition(TimeStampedModel):
     code = models.CharField(max_length=64, unique=True)
     label = LocalizedCharField()
     kind = models.CharField(max_length=32)
-    description = LocalizedTextField(blank=True)
 
     class Meta:
         ordering = ['code']
