@@ -15,7 +15,7 @@ jobs:
     outputs:
       modal_changed: ${{ steps.result.outputs.changed }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -40,6 +40,7 @@ jobs:
 
   ci-django:
     name: Django API CI
+    # Runs unconditionally on every prod tag — CI must always pass before a production release.
     uses: ./.github/workflows/ci-django.yml
 
   migrate:
@@ -53,7 +54,7 @@ jobs:
       DJANGO_ENV: ci
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: actions/setup-python@v6
         with:
@@ -95,7 +96,7 @@ jobs:
       MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
       MODAL_ENVIRONMENT: prod
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: actions/setup-python@v6
         with:
