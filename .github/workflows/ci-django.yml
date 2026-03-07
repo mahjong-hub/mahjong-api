@@ -1,16 +1,6 @@
 name: CI - Django API
 
 on:
-  pull_request:
-    paths-ignore:
-      - 'modal_app/**'
-      - '.github/**'
-  push:
-    branches:
-      - main
-    paths-ignore:
-      - 'modal_app/**'
-      - '.github/**'
   workflow_call:
 
 permissions:
