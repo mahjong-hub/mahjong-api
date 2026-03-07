@@ -1,54 +1,11 @@
-import os
-import sys
 import json
+import os
 import re
-import urllib.request
+import sys
 
-BOT_IDENTIFIER = '<!-- pr-check -->'  # used to detect/update comment
+from util.github_api import github_api, update_pr_comment
 
-
-def github_api(url: str, method: str = 'GET', data=None):
-    """Generic GitHub API request."""
-    token = os.environ.get('GITHUB_TOKEN')
-    if not token:
-        raise RuntimeError('Missing GITHUB_TOKEN')
-
-    headers = {
-        'Authorization': f'Bearer {token}',
-        'Accept': 'application/vnd.github+json',
-        'X-GitHub-Api-Version': '2022-11-28',
-    }
-
-    req = urllib.request.Request(url, method=method, headers=headers)
-
-    if data is not None:
-        req.data = json.dumps(data).encode('utf-8')
-
-    with urllib.request.urlopen(req) as resp:
-        return json.load(resp)
-
-
-def update_pr_comment(owner: str, repo: str, pr_number: int, body: str):
-    """Create or update a PR comment with a stable identifier."""
-    # List comments for this PR
-    comments_url = f'https://api.github.com/repos/{owner}/{repo}/issues/{pr_number}/comments'
-    comments = github_api(comments_url)
-
-    existing_id = None
-    for c in comments:
-        if (c.get('body') or '').startswith(BOT_IDENTIFIER):
-            existing_id = c['id']
-            break
-
-    full_body = f'{BOT_IDENTIFIER}\n{body}'
-
-    if existing_id:
-        update_url = f'https://api.github.com/repos/{owner}/{repo}/issues/comments/{existing_id}'
-        github_api(update_url, method='PATCH', data={'body': full_body})
-        print(f'Updated PR comment (id={existing_id})')
-    else:
-        github_api(comments_url, method='POST', data={'body': full_body})
-        print('Created PR comment')
+BOT_IDENTIFIER = '<!-- pr-check-meta -->'
 
 
 def main() -> int:
@@ -118,7 +75,7 @@ def main() -> int:
         )
 
         body = (
-            '## ❌ PR Health Check\n\n'
+            '## ❌ PR Meta Check\n\n'
             'The automated PR checks found one or more issues with this '
             'pull request.\n\n'
             f'{status_table}\n\n'
@@ -127,7 +84,7 @@ def main() -> int:
             'adding an assignee or labels), this check will re-run automatically '
             'on the next PR update.'
         )
-        update_pr_comment(owner, repo, pr_number, body)
+        update_pr_comment(owner, repo, pr_number, body, BOT_IDENTIFIER)
         return 1
 
     # Success: professional summary with table
@@ -143,12 +100,12 @@ def main() -> int:
     )
 
     body = (
-        '## ✅ PR Health Check Passed\n\n'
+        '## ✅ PR Meta Check Passed\n\n'
         'All required PR hygiene checks have been satisfied.\n\n'
         f'{summary_table}\n'
         '\nThank you for keeping the pull request metadata consistent and clear.'
     )
-    update_pr_comment(owner, repo, pr_number, body)
+    update_pr_comment(owner, repo, pr_number, body, BOT_IDENTIFIER)
     return 0
 
 
