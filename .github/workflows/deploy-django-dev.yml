@@ -1,27 +1,51 @@
 name: Deploy Django API (Dev)
 
 on:
-  workflow_run:
-    workflows: ["CI - Django API"]
-    types: [completed]
+  push:
     branches: [main]
   workflow_dispatch:
 
 permissions: {}
 
 jobs:
-  guard:
-    name: Check CI Result
-    if: >
-      github.event_name == 'workflow_dispatch' ||
-      github.event.workflow_run.conclusion == 'success'
+  detect_paths:
     runs-on: ubuntu-latest
+    outputs:
+      django_changed: ${{ steps.result.outputs.changed }}
     steps:
-      - run: echo "CI passed, proceeding with deployment"
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect Django file changes
+        id: detect
+        if: github.event_name == 'push'
+        uses: ./.github/actions/detect-changed-paths
+        with:
+          base-sha: ${{ github.event.before }}
+          ignore-paths: |
+            modal_app/
+            .github/
+
+      - name: Set result
+        id: result
+        run: |
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            echo "changed=${{ steps.detect.outputs.changed }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  django_ci:
+    name: Django API CI
+    needs: detect_paths
+    if: needs.detect_paths.outputs.django_changed == 'true'
+    uses: ./.github/workflows/ci-django.yml
 
   migrate:
     name: Migrate Dev DB
-    needs: guard
+    needs: [detect_paths, django_ci]
+    if: needs.detect_paths.outputs.django_changed == 'true'
     environment:
       name: development
       url: https://api.dev.mahjongcalc.com
