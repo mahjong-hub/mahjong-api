@@ -10,8 +10,37 @@ permissions:
   contents: read
 
 jobs:
+  detect_paths:
+    runs-on: ubuntu-latest
+    outputs:
+      modal_changed: ${{ steps.result.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Detect Modal file changes
+        id: detect
+        if: github.event.before != '0000000000000000000000000000000000000000'
+        uses: ./.github/actions/detect-changed-paths
+        with:
+          base-sha: ${{ github.event.before }}
+          include-paths: |
+            modal_app/
+
+      - name: Set result
+        id: result
+        run: |
+          BEFORE="${{ github.event.before }}"
+          if [[ "$BEFORE" == "0000000000000000000000000000000000000000" || "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=${{ steps.detect.outputs.changed }}" >> "$GITHUB_OUTPUT"
+          fi
+
   ci-django:
     name: Django API CI
+    # Runs unconditionally on every prod tag — CI must always pass before a production release.
     uses: ./.github/workflows/ci-django.yml
 
   migrate:
@@ -25,7 +54,7 @@ jobs:
       DJANGO_ENV: ci
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: actions/setup-python@v6
         with:
@@ -58,6 +87,8 @@ jobs:
 
   deploy-modal:
     name: Deploy Modal (Prod)
+    needs: detect_paths
+    if: needs.detect_paths.outputs.modal_changed == 'true'
     environment: production
     runs-on: ubuntu-latest
     env:
@@ -65,7 +96,7 @@ jobs:
       MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
       MODAL_ENVIRONMENT: prod
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: actions/setup-python@v6
         with:

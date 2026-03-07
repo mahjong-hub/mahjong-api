@@ -12,8 +12,41 @@ on:
       - assigned
       - unassigned
 
+concurrency:
+  group: pr-check-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions: {}
+
 jobs:
+  detect_paths:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      django_changed: ${{ steps.detect.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Detect Django file changes
+        id: detect
+        uses: ./.github/actions/detect-changed-paths
+        with:
+          base-sha: ${{ github.event.pull_request.base.sha }}
+          ignore-paths: |
+            modal_app/
+            .github/
+
+  django_ci:
+    needs: detect_paths
+    if: needs.detect_paths.outputs.django_changed == 'true'
+    uses: ./.github/workflows/ci-django.yml
+
   pr_check:
+    needs: [detect_paths, django_ci]
+    if: always()
     permissions:
       contents: read
       pull-requests: write
@@ -24,8 +57,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Run PR check
+      - name: Run PR Meta check
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          python .github/scripts/check_pr.py
+          python .github/scripts/check_pr_meta.py
+
+      - name: Run Django CI check
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DJANGO_CHANGED: ${{ needs.detect_paths.outputs.django_changed }}
+          DJANGO_CI_RESULT: ${{ needs.django_ci.result }}
+        run: |
+          python .github/scripts/check_django_ci.py
