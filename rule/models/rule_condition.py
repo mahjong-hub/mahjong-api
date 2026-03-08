@@ -65,6 +65,30 @@ class RuleCondition(models.Model):
                         context__isnull=True,
                     )
                     | models.Q(
+                        operator__isnull=False,
+                        value__isnull=False,
+                        type__in=[
+                            ConditionType.CHOW_COUNT.value,
+                            ConditionType.PUNG_COUNT.value,
+                            ConditionType.KONG_COUNT.value,
+                            ConditionType.PAIR_COUNT.value,
+                        ],
+                        target__in=[e.value for e in CountTarget],
+                        context__in=[e.value for e in ConditionContext],
+                    )
+                    | models.Q(
+                        operator__isnull=False,
+                        value__isnull=False,
+                        type__in=[
+                            ConditionType.CHOW_COUNT.value,
+                            ConditionType.PUNG_COUNT.value,
+                            ConditionType.KONG_COUNT.value,
+                            ConditionType.PAIR_COUNT.value,
+                        ],
+                        target__isnull=True,
+                        context__in=[e.value for e in ConditionContext],
+                    )
+                    | models.Q(
                         operator__isnull=True,
                         value__isnull=True,
                         type=ConditionType.HAND_STRUCTURE.value,
