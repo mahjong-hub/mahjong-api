@@ -3,7 +3,7 @@ import uuid
 from django.db import IntegrityError
 from django.test import TestCase
 
-from rule.constants import ConditionContext, ConditionType, Operator
+from rule.constants import WinContext, ConditionType, Operator
 from rule.factories import RuleConditionFactory, RuleLogicFactory
 from rule.models import RuleCondition
 
@@ -49,7 +49,7 @@ class TestRuleConditionModel(TestCase):
             operator=None,
             value=None,
             target=None,
-            context=ConditionContext.SELF_DRAW.value,
+            context=WinContext.SELF_DRAW.value,
         )
 
         condition.refresh_from_db()

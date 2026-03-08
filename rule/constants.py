@@ -66,11 +66,17 @@ class ConditionType(Enum):
 
 
 class HandStructureTarget(Enum):
+    """
+    Targets for hand structure conditions, specifying the
+    overall hand pattern to check for.
+    """
+
     STANDARD = 'standard'
     SEVEN_PAIRS = 'seven_pairs'
     THIRTEEN_ORPHANS = 'thirteen_orphans'
     NINE_GATES = 'nine_gates'
     ALL_GREEN = 'all_green'
+    ALL_CONCEALED = 'all_concealed'
 
     @classmethod
     def choices(cls):
@@ -95,16 +101,18 @@ class CountTarget(Enum):
     DOT = 'dot'  # 1-9 of dot suit
     CHARACTER = 'character'  # 1-9 of character suit
     FLOWER = 'flower'  # any flower/season tile
+    CONCEALED = 'concealed'  # only count concealed melds/tiles
 
     @classmethod
     def choices(cls):
         return [(item.value, item.name) for item in cls]
 
 
-class ConditionContext(Enum):
-    CONCEALED = 'concealed'
-    SEAT_WIND = 'seat_wind'
-    ROUND_WIND = 'round_wind'
+class WinContext(Enum):
+    """
+    Context for win condition checks, specifying the circumstances of the win.
+    """
+
     SELF_DRAW = 'self_draw'
     ROB_KONG = 'rob_kong'
     REPLACEMENT = 'replacement'
@@ -113,6 +121,19 @@ class ConditionContext(Enum):
     LAST_DISCARD = 'last_discard'
     HEAVENLY = 'heavenly'
     EARTHLY = 'earthly'
+
+    @classmethod
+    def choices(cls):
+        return [(item.value, item.name) for item in cls]
+
+
+class CountContext(Enum):
+    """
+    Context for count conditions, specifying when the count applies.
+    """
+
+    SEAT_WIND = 'seat_wind'
+    ROUND_WIND = 'round_wind'
 
     @classmethod
     def choices(cls):

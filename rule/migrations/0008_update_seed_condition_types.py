@@ -67,7 +67,7 @@ RULES = [
         'label': {'en': 'Concealed Hand', 'zh-hk': '門清', 'zh-cn': '門前清'},
         'kind': 'bonus',
         'conditions': [
-            {'operator': None, 'value': None, 'type': 'win_condition', 'target': None, 'context': 'concealed'},
+            {'operator': None, 'value': None, 'type': 'hand_structure', 'target': 'all_concealed', 'context': None},
         ],
     },
     {
@@ -238,7 +238,7 @@ RULES = [
         'label': {'en': 'Four Concealed Pungs', 'zh-hk': '四暗刻', 'zh-cn': '四暗刻'},
         'kind': 'limit',
         'conditions': [
-            {'operator': 'at_least', 'value': 4, 'type': 'pung_count', 'target': None, 'context': 'concealed'},
+            {'operator': 'at_least', 'value': 4, 'type': 'pung_count', 'target': 'concealed', 'context': None},
         ],
     },
     {

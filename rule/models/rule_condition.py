@@ -3,7 +3,8 @@ import uuid
 from django.db import models
 
 from rule.constants import (
-    ConditionContext,
+    CountContext,
+    WinContext,
     ConditionType,
     CountTarget,
     HandStructureTarget,
@@ -74,7 +75,7 @@ class RuleCondition(models.Model):
                             ConditionType.PAIR_COUNT.value,
                         ],
                         target__in=[e.value for e in CountTarget],
-                        context__in=[e.value for e in ConditionContext],
+                        context__in=[e.value for e in CountContext],
                     )
                     | models.Q(
                         operator__isnull=False,
@@ -86,7 +87,7 @@ class RuleCondition(models.Model):
                             ConditionType.PAIR_COUNT.value,
                         ],
                         target__isnull=True,
-                        context__in=[e.value for e in ConditionContext],
+                        context__in=[e.value for e in CountContext],
                     )
                     | models.Q(
                         operator__isnull=True,
@@ -107,7 +108,7 @@ class RuleCondition(models.Model):
                         value__isnull=True,
                         type=ConditionType.WIN_CONDITION.value,
                         target__isnull=True,
-                        context__in=[e.value for e in ConditionContext],
+                        context__in=[e.value for e in WinContext],
                     )
                 ),
                 name='rule_rulecondition_target_valid',
