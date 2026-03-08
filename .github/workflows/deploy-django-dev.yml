@@ -50,6 +50,8 @@ jobs:
     name: Migrate Dev DB
     needs: [detect_paths, django_ci]
     if: needs.detect_paths.outputs.django_changed == 'true'
+    permissions:
+      contents: read
     environment:
       name: development
       url: https://api.dev.mahjongcalc.com
