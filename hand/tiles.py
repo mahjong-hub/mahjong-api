@@ -162,7 +162,7 @@ def validate_tile_counts(tile_codes: list[str]) -> list[str]:
     return errors
 
 
-def sort_tiles(tile_codes: list[str]) -> list[str]:
+def sort_tiles(tile_codes: list[TileCode]) -> list[TileCode]:
     """
     Sort tile codes in a standard order for display and processing.
 
