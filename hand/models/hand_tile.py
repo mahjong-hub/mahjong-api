@@ -28,6 +28,8 @@ class HandTile(TimeStampedModel):
     # Stable ordering for UI display (left-to-right)
     sort_order = models.PositiveIntegerField(default=0)
 
+    is_concealed = models.BooleanField(default=True)
+
     class Meta:
         indexes = [
             models.Index(fields=['hand_correction', 'sort_order']),
