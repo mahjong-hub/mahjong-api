@@ -45,7 +45,7 @@ class RuleConditionFactory(factory.django.DjangoModelFactory):
         model = RuleCondition
 
     rule_logic = factory.SubFactory(RuleLogicFactory)
-    type = ConditionType.PUNG.value
+    type = ConditionType.PUNG_COUNT.value
     operator = Operator.AT_LEAST.value
     value = 1
     target = None

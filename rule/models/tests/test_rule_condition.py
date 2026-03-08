@@ -3,7 +3,7 @@ import uuid
 from django.db import IntegrityError
 from django.test import TestCase
 
-from rule.constants import ConditionType, Operator
+from rule.constants import WinContext, ConditionType, Operator
 from rule.factories import RuleConditionFactory, RuleLogicFactory
 from rule.models import RuleCondition
 
@@ -13,7 +13,7 @@ class TestRuleConditionModel(TestCase):
         condition = RuleConditionFactory()
 
         self.assertIsInstance(condition.id, uuid.UUID)
-        self.assertEqual(condition.type, ConditionType.PUNG.value)
+        self.assertEqual(condition.type, ConditionType.PUNG_COUNT.value)
         self.assertEqual(condition.operator, Operator.AT_LEAST.value)
         self.assertEqual(condition.value, 1)
         self.assertIsNone(condition.target)
@@ -44,7 +44,13 @@ class TestRuleConditionModel(TestCase):
         self.assertIn(c2, logic.conditions.all())
 
     def test_value_can_be_null(self):
-        condition = RuleConditionFactory(value=None)
+        condition = RuleConditionFactory(
+            type=ConditionType.WIN_CONDITION.value,
+            operator=None,
+            value=None,
+            target=None,
+            context=WinContext.SELF_DRAW.value,
+        )
 
         condition.refresh_from_db()
         self.assertIsNone(condition.value)
@@ -68,7 +74,7 @@ class TestRuleConditionModel(TestCase):
             RuleCondition.objects.create(
                 rule_logic=logic,
                 operator='not_valid',
-                type=ConditionType.PUNG.value,
+                type=ConditionType.PUNG_COUNT.value,
             )
 
     def test_type_rejects_invalid_value(self):
@@ -88,7 +94,7 @@ class TestRuleConditionModel(TestCase):
             RuleCondition.objects.create(
                 rule_logic=logic,
                 operator=Operator.AT_LEAST.value,
-                type=ConditionType.PUNG.value,
+                type=ConditionType.PUNG_COUNT.value,
                 target='not_valid',
             )
 
@@ -99,6 +105,6 @@ class TestRuleConditionModel(TestCase):
             RuleCondition.objects.create(
                 rule_logic=logic,
                 operator=Operator.AT_LEAST.value,
-                type=ConditionType.PUNG.value,
+                type=ConditionType.PUNG_COUNT.value,
                 context='not_valid',
             )
