@@ -4,8 +4,9 @@ from django.db import models
 
 from rule.constants import (
     ConditionContext,
-    ConditionTarget,
     ConditionType,
+    CountTarget,
+    HandStructureTarget,
     Operator,
 )
 
@@ -17,7 +18,7 @@ class RuleCondition(models.Model):
         related_name='conditions',
         on_delete=models.CASCADE,
     )
-    operator = models.CharField(max_length=32)
+    operator = models.CharField(max_length=32, null=True, blank=True)
     value = models.IntegerField(null=True, blank=True)
     type = models.CharField(max_length=32)
     target = models.CharField(max_length=64, null=True, blank=True)
@@ -26,7 +27,10 @@ class RuleCondition(models.Model):
     class Meta:
         constraints = [
             models.CheckConstraint(
-                condition=models.Q(operator__in=[e.value for e in Operator]),
+                condition=(
+                    models.Q(operator__isnull=True)
+                    | models.Q(operator__in=[e.value for e in Operator])
+                ),
                 name='rule_rulecondition_operator_valid',
             ),
             models.CheckConstraint(
@@ -35,20 +39,53 @@ class RuleCondition(models.Model):
             ),
             models.CheckConstraint(
                 condition=(
-                    models.Q(target__isnull=True)
+                    models.Q(
+                        operator__isnull=False,
+                        value__isnull=False,
+                        type__in=[
+                            ConditionType.CHOW_COUNT.value,
+                            ConditionType.PUNG_COUNT.value,
+                            ConditionType.KONG_COUNT.value,
+                            ConditionType.PAIR_COUNT.value,
+                            ConditionType.TILE_COUNT.value,
+                        ],
+                        target__in=[e.value for e in CountTarget],
+                        context__isnull=True,
+                    )
                     | models.Q(
-                        target__in=[e.value for e in ConditionTarget] + [''],
+                        operator__isnull=False,
+                        value__isnull=False,
+                        type__in=[
+                            ConditionType.CHOW_COUNT.value,
+                            ConditionType.PUNG_COUNT.value,
+                            ConditionType.KONG_COUNT.value,
+                            ConditionType.PAIR_COUNT.value,
+                        ],
+                        target__isnull=True,  # counts melds of any tile type
+                        context__isnull=True,
+                    )
+                    | models.Q(
+                        operator__isnull=True,
+                        value__isnull=True,
+                        type=ConditionType.HAND_STRUCTURE.value,
+                        target__in=[e.value for e in HandStructureTarget],
+                        context__isnull=True,
+                    )
+                    | models.Q(
+                        operator__isnull=False,
+                        type=ConditionType.SUIT_COUNT.value,
+                        target__isnull=True,
+                        value__isnull=False,
+                        context__isnull=True,
+                    )
+                    | models.Q(
+                        operator__isnull=True,
+                        value__isnull=True,
+                        type=ConditionType.WIN_CONDITION.value,
+                        target__isnull=True,
+                        context__in=[e.value for e in ConditionContext],
                     )
                 ),
                 name='rule_rulecondition_target_valid',
-            ),
-            models.CheckConstraint(
-                condition=(
-                    models.Q(context__isnull=True)
-                    | models.Q(
-                        context__in=[e.value for e in ConditionContext] + [''],
-                    )
-                ),
-                name='rule_rulecondition_context_valid',
             ),
         ]
