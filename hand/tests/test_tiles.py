@@ -1,58 +1,10 @@
 from django.test import TestCase
 
 from hand.tiles import (
-    TileCode,
     is_valid_tile_code,
-    label_to_tile,
+    sort_tiles,
     validate_tile_counts,
 )
-
-
-class TestLabelToTile(TestCase):
-    def test_valid_labels_return_correct_tile_code(self):
-        test_cases = [
-            ('1B', TileCode.BAMBOO_1),
-            ('9B', TileCode.BAMBOO_9),
-            ('1C', TileCode.CHARACTER_1),
-            ('5D', TileCode.DOT_5),
-            ('EW', TileCode.EAST_WIND),
-            ('SW', TileCode.SOUTH_WIND),
-            ('WW', TileCode.WEST_WIND),
-            ('NW', TileCode.NORTH_WIND),
-            ('RD', TileCode.RED_DRAGON),
-            ('GD', TileCode.GREEN_DRAGON),
-            ('WD', TileCode.WHITE_DRAGON),
-            ('1F', TileCode.FLOWER_1),
-            ('4F', TileCode.FLOWER_4),
-            ('1S', TileCode.SEASON_1),
-            ('4S', TileCode.SEASON_4),
-        ]
-
-        for label, expected_tile in test_cases:
-            result = label_to_tile(label)
-            self.assertEqual(
-                result,
-                expected_tile,
-                f"label_to_tile('{label}') should return {expected_tile}",
-            )
-
-    def test_invalid_labels_return_none(self):
-        invalid_labels = [
-            'INVALID',
-            '0B',
-            '10B',
-            'XX',
-            '',
-            'bamboo_1',
-            '1b',
-        ]
-
-        for label in invalid_labels:
-            result = label_to_tile(label)
-            self.assertIsNone(
-                result,
-                f"label_to_tile('{label}') should return None",
-            )
 
 
 class TestIsValidTileCode(TestCase):
@@ -215,3 +167,53 @@ class TestValidateTileCounts(TestCase):
         ]
         errors = validate_tile_counts(tile_codes)
         self.assertEqual(errors, [])
+
+
+class TestSortTiles(TestCase):
+    def test_sorting(self):
+        tile_codes = [
+            '5D',
+            '1B',
+            '3C',
+            'EW',
+            '2B',
+            '9C',
+            'GD',
+            '1C',
+            'NW',
+            '1D',
+            'WD',
+            '4B',
+            '1F',
+            '2F',
+            '3F',
+            '4F',
+            '1S',
+            '2S',
+            '3S',
+            '4S',
+        ]
+        expected_sorted = [
+            '1B',
+            '2B',
+            '4B',
+            '1C',
+            '3C',
+            '9C',
+            '1D',
+            '5D',
+            'EW',
+            'NW',
+            'GD',
+            'WD',
+            '1F',
+            '2F',
+            '3F',
+            '4F',
+            '1S',
+            '2S',
+            '3S',
+            '4S',
+        ]
+        sorted_tiles = sort_tiles(tile_codes)
+        self.assertEqual(sorted_tiles, expected_sorted)

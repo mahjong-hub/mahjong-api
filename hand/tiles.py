@@ -96,61 +96,6 @@ class TileSetCode(Enum):
         return [(item.value, item.name) for item in cls]
 
 
-# Model label to TileCode mapping
-# The ML model outputs class labels that may differ from our canonical codes.
-# This mapping converts model labels to TileCode enum values.
-MODEL_LABEL_TO_TILE: dict[str, TileCode] = {
-    # Bamboo tiles
-    '1B': TileCode.BAMBOO_1,
-    '2B': TileCode.BAMBOO_2,
-    '3B': TileCode.BAMBOO_3,
-    '4B': TileCode.BAMBOO_4,
-    '5B': TileCode.BAMBOO_5,
-    '6B': TileCode.BAMBOO_6,
-    '7B': TileCode.BAMBOO_7,
-    '8B': TileCode.BAMBOO_8,
-    '9B': TileCode.BAMBOO_9,
-    # Character tiles
-    '1C': TileCode.CHARACTER_1,
-    '2C': TileCode.CHARACTER_2,
-    '3C': TileCode.CHARACTER_3,
-    '4C': TileCode.CHARACTER_4,
-    '5C': TileCode.CHARACTER_5,
-    '6C': TileCode.CHARACTER_6,
-    '7C': TileCode.CHARACTER_7,
-    '8C': TileCode.CHARACTER_8,
-    '9C': TileCode.CHARACTER_9,
-    # Dot tiles
-    '1D': TileCode.DOT_1,
-    '2D': TileCode.DOT_2,
-    '3D': TileCode.DOT_3,
-    '4D': TileCode.DOT_4,
-    '5D': TileCode.DOT_5,
-    '6D': TileCode.DOT_6,
-    '7D': TileCode.DOT_7,
-    '8D': TileCode.DOT_8,
-    '9D': TileCode.DOT_9,
-    # Wind tiles
-    'EW': TileCode.EAST_WIND,
-    'SW': TileCode.SOUTH_WIND,
-    'WW': TileCode.WEST_WIND,
-    'NW': TileCode.NORTH_WIND,
-    # Dragon tiles
-    'RD': TileCode.RED_DRAGON,
-    'GD': TileCode.GREEN_DRAGON,
-    'WD': TileCode.WHITE_DRAGON,
-    # Flower tiles
-    '1F': TileCode.FLOWER_1,
-    '2F': TileCode.FLOWER_2,
-    '3F': TileCode.FLOWER_3,
-    '4F': TileCode.FLOWER_4,
-    # Season tiles
-    '1S': TileCode.SEASON_1,
-    '2S': TileCode.SEASON_2,
-    '3S': TileCode.SEASON_3,
-    '4S': TileCode.SEASON_4,
-}
-
 # Tiles that are unique in a standard mahjong set (max 1 of each)
 UNIQUE_TILES: frozenset[str] = frozenset(
     {
@@ -164,19 +109,6 @@ UNIQUE_TILES: frozenset[str] = frozenset(
         TileCode.SEASON_4.value,
     },
 )
-
-
-def label_to_tile(label: str) -> TileCode | None:
-    """
-    Convert a model prediction label to TileCode enum.
-
-    Args:
-        label: The class label from the ML model prediction.
-
-    Returns:
-        The TileCode enum if mapping exists, None otherwise.
-    """
-    return MODEL_LABEL_TO_TILE.get(label)
 
 
 def is_valid_tile_code(code: str) -> bool:
@@ -228,3 +160,29 @@ def validate_tile_counts(tile_codes: list[str]) -> list[str]:
                 )
 
     return errors
+
+
+def sort_tiles(tile_codes: list[str]) -> list[str]:
+    """
+    Sort tile codes in a standard order for display and processing.
+
+    Order:
+    1. Bamboo (1B-9B)
+    2. Character (1C-9C)
+    3. Dot (1D-9D)
+    4. Winds (EW, SW, WW, NW)
+    5. Dragons (RD, GD, WD)
+    6. Flowers (1F-4F)
+    7. Seasons (1S-4S)
+
+    Args:
+        tile_codes: List of tile code strings to sort.
+
+    Returns:
+        New list of tile codes sorted in the defined order.
+    """
+    tile_order = {tile.value: index for index, tile in enumerate(TileCode)}
+    return sorted(
+        tile_codes,
+        key=lambda code: tile_order.get(code, float('inf')),
+    )
